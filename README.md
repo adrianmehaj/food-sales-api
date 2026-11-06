@@ -24,12 +24,12 @@ dotnet ef database update --project src/FoodSales.Infrastructure --startup-proje
 dotnet ef migrations add EmriPershkrues --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api --output-dir Persistence/Migrations
 ```
 
-Në **Tools → NuGet Package Manager → Package Manager Console**, mbështeten gjithashtu komandat PMC sepse API ka paketën Microsoft.EntityFrameworkCore.Tools:
+Në **Tools → NuGet Package Manager → Package Manager Console**, mbështeten komandat PMC. Zgjidhni FoodSales.Infrastructure te Default project dhe FoodSales.Api si Startup Project; Tools është në Infrastructure, ndërsa API ka Design:
 
 ```powershell
-Get-Migration -Project FoodSales.Infrastructure -StartupProject FoodSales.Api
-Update-Database -Project FoodSales.Infrastructure -StartupProject FoodSales.Api
-Add-Migration EmriPershkrues -Project FoodSales.Infrastructure -StartupProject FoodSales.Api -OutputDir Persistence/Migrations
+Get-Migration
+Add-Migration "EmriPershkruesINdryshimit"
+Update-Database
 ```
 
 Komandat Add-Migration janë shembuj për ndryshime të reja; nuk ka nevojë të krijoni migrim bosh tani. Migrimet ekzistuese janë aplikuar. Ndaloni aplikacionin para krijimit të migrimit nëse Windows raporton skedarë build të bllokuar. Connection string merret nga API/config/user secrets/environment.
@@ -133,9 +133,17 @@ Produktet dhe banerat pranojnë fotografi nga pajisja përmes `POST /api/admin/i
 `GET /api/account/me` rifreskon cookie-n nëse roli aktual në databazë ndryshon nga roli i sesionit. Frontend-i rikuperon një herë sesionin kur një kërkesë admini kthen 403. Për ndryshimet e backend-it ndaloni debug-un dhe rindërtoni/rinisni API-në.
 
 ### Profili personal
-`GET/PUT /api/account/profile` për klientin dhe administratorin përdorin vetëm ID-në nga sesioni. Emër, telefon, qytet, adresë ruhen te rekordi Customer i lidhur me UserId; emaili i hyrjes te Identity. Për ndryshimin e emailit kërkohet fjalëkalimi aktual (me kontroll lockout). Ruajtja e Identity dhe profilit bëhet në të njëjtin transaksion; Version mbron ndryshimet e njëkohshme. Nuk nevojitet migrim i ri. Rrugët e UI: /llogaria dhe /admin/profili. Admini ka dalje të dukshme në topbar.
+`GET/PUT /api/account/profile` për klientin dhe administratorin përdorin vetëm ID-në nga sesioni. Emër, telefon, qytet, adresë ruhen te rekordi Customer i lidhur me UserId; emaili i hyrjes te Identity. Për ndryshimin e emailit kërkohet fjalëkalimi aktual (me kontroll lockout). Ruajtja e Identity dhe profilit bëhet në të njëjtin transaksion; Version mbron ndryshimet e njëkohshme. Nuk nevojitet migrim i ri. Rrugët e UI: /llogaria dhe /admin/profili. Admini ka dalje te profili në fund të sidebar-it; në telefon menaxhimi është te menuja e poshtme.
 
 Kërkesat e anuluara trajtohen si 499 vetëm kur RequestAborted është anuluar. Gabimet e tjera mbeten të raportuara. Frontend-i shtyn fillimin e leximeve një event-loop për të shmangur kërkesën e panevojshme gjatë React StrictMode effect replay. Nëse Visual Studio është konfiguruar të ndalojë në çdo hedhje exception-i, ai mund të ndalojë edhe për anulime të trajtuara; nuk është verifikuar konfigurimi lokal i debugger-it.
 
 ### Data e dëshiruar e dërgesës
 Porositë online me dërgesë kërkojnë RequestedDeliveryDate (YYYY-MM-DD), jo më herët se dita aktuale sipas orës lokale të biznesit. Marrja vetë nuk kërkon datë dërgese; porositë manuale mund ta kenë opsionale. Ruhet si SQL date nullable për pajtueshmëri me porositë ekzistuese. Shfaqet në formular, konfirmim, detajet e klientit dhe listën/detajet e adminit. Data është kërkesë e klientit; biznesi konfirmon mundësinë. Migrimi AddRequestedDeliveryDate është aplikuar në LocalDB FoodSales (2026-11-06); hostet e tjera duhet të aplikojnë migrimet para nisjes së versionit të ri.
+
+## Galeritë, njoftimet dhe raportet
+
+Banerat kanë deri në 10 fotografi në një renditje të ruajtur; banerat e vjetër me ImageUrl vazhdojnë të shfaqen. Njoftimet ruhen në Notifications, ndërsa leximi ruhet veçmas për secilin përdorues. Porosia online krijon njoftim për adminët dhe për klientin e kyçur; konfirmimi krijon njoftim privat me datën e porosisë. Për porositë pa llogari, konfirmimi i regjistrimit shfaqet në faqen e përfundimit. Nuk dërgohen SMS, email ose push jashtë platformës.
+
+Raportet te /api/admin/reports/customers janë vetëm për adminë dhe përfshijnë porositë, shitjet e përfunduara, arkëtimet dhe borxhin. Historikët e porosive/pagesave janë të faqëzuar; borxhi nuk përfshin porositë në pritje. Eksporti PDF/Excel bëhet në frontend, me leximin e të gjitha faqeve deri në 5,000 rreshta për listë dhe me shuma numerike në Excel. Njoftimet rifreskohen çdo 15 sekonda kur platforma është aktive; leximi nuk ndryshon njoftimet e përdoruesve të tjerë.
+
+Arkitektura dhe udhëzimi i saktë për Add-Migration/Update-Database: [ARCHITECTURE.sq.md](docs/ARCHITECTURE.sq.md). Factory i migrimeve lejon krijimin e kontekstit pa nisur serverin web. Ndryshimet e skemës janë në migrimin AddBannerGalleryAndPlatformNotifications, të aplikuar lokalisht më 6 nëntor 2026.

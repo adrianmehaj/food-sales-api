@@ -16,6 +16,9 @@ public sealed class CatalogController(CatalogService service, IConfiguration con
     [HttpGet("banners"), AllowAnonymous]
     public Task<Page<BannerView>> Banners(int page = 1, int? pageSize = null, CancellationToken ct = default) => service.BannersAsync(page, pageSize, false, ct);
 
+    [HttpGet("products/{id:guid}"), AllowAnonymous]
+    public Task<ProductView> Product(Guid id, CancellationToken ct) => service.ProductAsync(id, User.FindFirstValue(ClaimTypes.NameIdentifier), ct);
+
     [HttpGet("business"), AllowAnonymous]
     public BusinessView Business() => config.GetSection("Business").Get<BusinessView>()!;
 }

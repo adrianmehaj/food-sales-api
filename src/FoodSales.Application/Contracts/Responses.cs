@@ -21,7 +21,7 @@ public sealed record OrderView(Guid Id, Guid CustomerId, string CustomerName, st
     DateTime? CompletedAt, DateTime? DueAt, decimal Total, decimal Paid, decimal Debt, PaymentStatus PaymentStatus,
     string Version, List<LineView> Lines, List<PaymentView> Payments, List<EventView> History, DateOnly? RequestedDeliveryDate);
 public sealed record OrderReceipt(Guid Id, decimal Total, OrderStatus Status);
-public sealed record BannerView(Guid Id, string Title, string Text, string ImageUrl, DateTime StartsAt, DateTime EndsAt, bool IsActive);
+public sealed record BannerView(Guid Id, string Title, string Text, string ImageUrl, DateTime StartsAt, DateTime EndsAt, bool IsActive, List<string> ImageUrls);
 public sealed record ReportBucket(DateTime Date, decimal Sales, decimal Collections);
 public sealed record DashboardView(decimal Sales, decimal Collections, decimal OutstandingDebt,
     int NewOrders, int PendingOrders, DateTime From, DateTime To, List<ReportBucket> Days);

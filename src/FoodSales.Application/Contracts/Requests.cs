@@ -40,7 +40,8 @@ public sealed record CompleteOrderRequest(decimal InitialPayment, bool ApproveCr
 public sealed record PaymentRequest(Guid RequestId, decimal Amount, [MaxLength(300)] string Note);
 public sealed record CustomerPriceRequest(Guid ProductId, [Range(typeof(decimal), "0.01", "100000")] decimal Price);
 public sealed record BannerRequest([Required, MaxLength(150)] string Title, [Required, MaxLength(500)] string Text,
-    [MaxLength(1000)] string ImageUrl, DateTime StartsAt, DateTime EndsAt, bool IsActive);
+    [MaxLength(1000)] string ImageUrl, DateTime StartsAt, DateTime EndsAt, bool IsActive,
+    [MaxLength(10)] List<string>? ImageUrls = null);
 public sealed record LoginRequest([Required, EmailAddress, MaxLength(254)] string Email, [Required, MaxLength(128)] string Password);
 public sealed record RegisterRequest([Required, EmailAddress, MaxLength(254)] string Email,
     [Required, MinLength(12), MaxLength(128)] string Password);

@@ -8,6 +8,14 @@ namespace FoodSales.Application.Services;
 
 public sealed class CatalogService(IShopRepository store, IUnitOfWork unit, ILocalClock clock, PaginationOptions pagination)
 {
+    public async Task<ProductView> ProductAsync(Guid id, string? userId, CancellationToken ct)
+    {
+        var p = await store.ProductAsync(id, ct) ?? throw new NotFoundException();
+        if (!p.IsActive) throw new NotFoundException();
+        var customer = userId == null ? null : await store.CustomerForUserAsync(userId, ct);
+        var special = customer?.Type == FoodSales.Domain.Enums.CustomerType.Business ? await store.SpecialPriceAsync(customer.Id, id, ct) : null;
+        return new(p.Id, p.Name, p.Description, p.ImageUrl, p.Category, p.Price, special ?? p.PriceAt(clock.Now), p.Stock, p.Unit, p.IsActive, p.OfferPrice, p.OfferStartsAt, p.OfferEndsAt, Convert.ToBase64String(p.Version));
+    }
     public Task<Page<ProductView>> ProductsAsync(int page, int? size, string? search, string? category, bool offersOnly, bool admin, string? userId, CancellationToken ct)
     {
         var p = pagination.Normalize(page, size);
@@ -34,8 +42,12 @@ public sealed class CatalogService(IShopRepository store, IUnitOfWork unit, ILoc
     {
         EnsureImage(r.ImageUrl);
         if (r.EndsAt <= r.StartsAt) throw new BusinessException("Periudha e banerit nuk është e vlefshme.");
+        var images = r.ImageUrls ?? (string.IsNullOrWhiteSpace(r.ImageUrl) ? [] : new List<string> { r.ImageUrl });
+        if (images.Count > 10 || images.Any(x => string.IsNullOrWhiteSpace(x) || x.Length > 1000))
+            throw new BusinessException("Baneri mund të ketë deri në 10 fotografi të vlefshme.");
+        foreach (var image in images) EnsureImage(image);
         var banner = id.HasValue ? await store.BannerAsync(id.Value, ct) ?? throw new NotFoundException() : new Banner();
-        banner.Title = r.Title.Trim(); banner.Text = r.Text.Trim(); banner.ImageUrl = r.ImageUrl.Trim();
+        banner.Title = r.Title.Trim(); banner.Text = r.Text.Trim(); banner.ImageUrls = images.Distinct().ToList(); banner.ImageUrl = banner.ImageUrls.FirstOrDefault() ?? "";
         banner.StartsAt = r.StartsAt; banner.EndsAt = r.EndsAt; banner.IsActive = r.IsActive;
         if (!id.HasValue) store.Add(banner);
         return banner.Id;

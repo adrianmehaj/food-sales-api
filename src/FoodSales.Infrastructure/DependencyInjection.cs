@@ -49,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IAdministratorService, AdministratorService>();
         services.AddScoped<CatalogService>(); services.AddScoped<CustomerService>(); services.AddScoped<OrderService>();
         return services;

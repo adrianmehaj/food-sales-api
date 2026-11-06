@@ -10,7 +10,7 @@ using FoodSales.Domain.Exceptions;
 
 namespace FoodSales.Application.Services;
 
-public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocalClock clock, PaginationOptions pagination)
+public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocalClock clock, PaginationOptions pagination, INotificationService notifications)
 {
     public Task<OrderReceipt> CreateAsync(CreateOrderRequest r, bool manual, string? actor, CancellationToken ct) => unit.ExecuteAsync(async () =>
     {
@@ -34,6 +34,7 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
             order.AddLine(product, item.Quantity, price ?? product.PriceAt(clock.Now));
         }
         store.Add(order);
+        if (!manual) notifications.OrderCreated(order);
         if (manual && r.CompleteImmediately)
         {
             await CompleteCoreAsync(order, actor!, r.InitialPayment, r.ApproveCredit, r.RequestId, ct);
@@ -54,6 +55,7 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
     {
         var order = await RequiredAsync(id, r.Version, ct);
         order.MoveTo(r.Status, actor, clock.Now);
+        if (r.Status == OrderStatus.Confirmed) notifications.OrderConfirmed(order);
         return true;
     }, ct);
 

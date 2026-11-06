@@ -103,6 +103,7 @@ public sealed class ShopConfigurations : IEntityTypeConfiguration<Product>, IEnt
         b.Property(x => x.Title).HasMaxLength(150).IsRequired();
         b.Property(x => x.Text).HasMaxLength(500).IsRequired();
         b.Property(x => x.ImageUrl).HasMaxLength(1000).IsRequired();
+        b.PrimitiveCollection(x => x.ImageUrls).HasColumnType("nvarchar(max)");
         b.HasIndex(x => new { x.IsActive, x.EndsAt });
     }
 }

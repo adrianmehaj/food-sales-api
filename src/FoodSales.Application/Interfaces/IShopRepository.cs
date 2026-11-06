@@ -27,17 +27,3 @@ public interface IShopRepository
     Task<Banner?> BannerAsync(Guid id, CancellationToken ct);
     void Add(Banner banner);
 }
-
-public interface IUnitOfWork
-{
-    Task<T> ExecuteAsync<T>(Func<Task<T>> action, CancellationToken ct);
-}
-
-public interface ILocalClock { DateTime Now { get; } }
-public interface IAccountService
-{
-    Task<AccountView> RegisterAsync(RegisterRequest request, CancellationToken ct);
-    Task<AccountView> LoginAsync(LoginRequest request, CancellationToken ct);
-    Task LogoutAsync();
-    Task<AccountView?> CurrentAsync(string userId, CancellationToken ct);
-}

@@ -1,12 +1,30 @@
 using System.Diagnostics;
+using System.Net;
 using FoodSales.Api.Extensions;
 using FoodSales.Infrastructure;
 using FoodSales.Infrastructure.Persistence;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFoodSales(builder.Configuration, builder.Environment.IsDevelopment())
     .AddApiServices(builder.Environment.IsDevelopment());
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    // Vite/ngrok terminates HTTPS before forwarding to this loopback-only API.
+    // Keep production proxy configuration and client-IP handling unchanged.
+    var forwarded = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto,
+        ForwardLimit = 1
+    };
+    forwarded.KnownIPNetworks.Clear();
+    forwarded.KnownProxies.Clear();
+    forwarded.KnownProxies.Add(IPAddress.Loopback);
+    forwarded.KnownProxies.Add(IPAddress.IPv6Loopback);
+    app.UseForwardedHeaders(forwarded);
+}
 
 if (args.Any(x => x is "--migrate" or "--seed-demo" or "--create-admin" or "--grant-admin"))
 {

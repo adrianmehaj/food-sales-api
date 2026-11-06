@@ -107,7 +107,7 @@ public sealed class ShopRepository(ShopDbContext db) : IShopRepository
         var query = db.Banners.AsNoTracking().Where(x => admin || x.IsActive && x.StartsAt <= now && x.EndsAt >= now);
         var count = await query.CountAsync(ct);
         var items = await query.OrderByDescending(x => x.StartsAt).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
-            .Select(x => new BannerView(x.Id, x.Title, x.Text, x.ImageUrl, x.StartsAt, x.EndsAt, x.IsActive)).ToListAsync(ct);
+            .Select(x => new BannerView(x.Id, x.Title, x.Text, x.ImageUrl, x.StartsAt, x.EndsAt, x.IsActive, x.ImageUrls)).ToListAsync(ct);
         return new(items, page, size, count);
     }
     public Task<Banner?> BannerAsync(Guid id, CancellationToken ct) => db.Banners.SingleOrDefaultAsync(x => x.Id == id, ct);

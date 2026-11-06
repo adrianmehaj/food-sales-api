@@ -13,6 +13,8 @@ public sealed class ShopDbContext(DbContextOptions<ShopDbContext> options) : Ide
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Banner> Banners => Set<Banner>();
+    public DbSet<PlatformNotification> Notifications => Set<PlatformNotification>();
+    public DbSet<NotificationRead> NotificationReads => Set<NotificationRead>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

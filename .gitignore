@@ -14,6 +14,7 @@ artifacts/
 **/wwwroot/brand.svg
 **/wwwroot/_redirects
 **/wwwroot/_headers
+**/wwwroot/licenses/
 *.user
 .tools/
 **/App_Data/
