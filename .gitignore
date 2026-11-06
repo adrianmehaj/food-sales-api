@@ -12,6 +12,8 @@ artifacts/
 **/wwwroot/manifest.webmanifest
 **/wwwroot/icons/
 **/wwwroot/brand.svg
+**/wwwroot/brand-*.svg
+**/wwwroot/brand-*.png
 **/wwwroot/_redirects
 **/wwwroot/_headers
 **/wwwroot/licenses/
