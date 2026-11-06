@@ -1,0 +1,8 @@
+**/bin
+**/obj
+.git
+.vs
+.tools
+artifacts
+**/App_Data
+**/*.user
