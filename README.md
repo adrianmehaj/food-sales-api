@@ -1,149 +1,202 @@
-# Food Sales API — Tryeza
+# Tryeza — Food Sales API
 
-ASP.NET Core 10, EF Core 10 dhe SQL Server. Clean Architecture: Api, Application, Domain, Infrastructure. React/PWA publikohet brenda wwwroot të ASP.NET Core, në të njëjtën adresë. SQL Server mbetet databazë më vete. Emri i instalimit PWA është Tryeza - Produkte Bio.
+**Backend për shitjen e produkteve ushqimore, porositë, pagesat dhe raportimin financiar.**
 
-## Visual Studio dhe VS Code
+Ndërtuar me ASP.NET Core 10, Entity Framework Core 10 dhe SQL Server. API-ja shërben ndërfaqen React/PWA nga i njëjti origin pas paketimit dhe mban të ndara shitjet, arkëtimet dhe borxhet.
 
-Hapni `FoodSales.sln` në Visual Studio 2026 të përditësuar, me workload **ASP.NET and web development** dhe SDK .NET 10. Zgjidhni `FoodSales.Api` → **Set as Startup Project**, profilin `FoodSales.Api`, pastaj F5. API nis në http://localhost:5080 dhe profili hap automatikisht Swagger në http://localhost:5080/swagger. Visual Studio 2022 (17.11.5 i gjetur në këtë kompjuter) nuk mbështet target-in net10.0; skripti Start-App.ps1 punon me SDK-në lokale pa ndryshuar Visual Studio.
+[Frontend-i](https://github.com/adrianmehaj/food-sales-web) · [Arkitektura](docs/ARCHITECTURE.sq.md) · [Verifikimet](docs/VERIFICATION.sq.md) · [Licenca](LICENSE)
 
-Në VS Code hapni dosjen `food-sales-web`, pastaj terminalin `npm run dev`; frontend-i është në http://127.0.0.1:5173 dhe lidhet me API-në në portin 5080. Nëse po përdorni dy terminale gjatë zhvillimit, mos nisni edhe një kopje tjetër backend-i në të njëjtin port. Publikimi i prodhimit mbetet një aplikacion i vetëm.
+## Funksionaliteti
 
-## Migrimet nga Visual Studio
+- Katalog publik, produkte me njësi kg/litër/copë, stok dhe oferta me afat.
+- Porosi online, edhe pa llogari, dhe regjistrime manuale nga administratori.
+- Dërgesë në adresë me datë të dëshiruar ose marrje vetë.
+- Peshë përfundimtare për produktet me peshë dhe rillogaritje e totalit.
+- Pagesa të plota, të pjesshme ose të mëvonshme, me historik dhe miratim borxhi.
+- Klientë individë/biznese, çmime të veçanta dhe afate pagese.
+- Profile personale, role administrimi dhe qasje vetëm te të dhënat përkatëse.
+- Banera me galeri, fotografi të ngarkuara nga pajisja dhe njoftime brenda platformës.
+- Pasqyrë financiare sipas periudhës dhe raporte të faqëzuara për secilin klient.
 
-Në terminalin e Visual Studio-s, nga dosja ku është `FoodSales.sln`, me SDK .NET 10 në PATH:
+## Teknologjitë dhe arkitektura
 
-```powershell
-dotnet tool restore
-dotnet ef migrations list --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api
-dotnet ef database update --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api
+| Shtresa | Përgjegjësia |
+| --- | --- |
+| `FoodSales.Api` | HTTP, controller-at, autorizimi, CSRF, trajtimi i gabimeve dhe Swagger |
+| `FoodSales.Application` | Kontratat, ndërfaqet dhe rrjedhat e përdorimit |
+| `FoodSales.Domain` | Entitetet dhe rregullat e biznesit |
+| `FoodSales.Infrastructure` | EF Core, SQL Server, Identity, ruajtja e skedarëve dhe raportet |
+
+```text
+src/
+  FoodSales.Api/
+  FoodSales.Application/
+  FoodSales.Domain/
+  FoodSales.Infrastructure/
+    Persistence/Migrations/
+scripts/                 Nisja, administratori fillestar dhe publikimi
+docs/                    Arkitektura, SQL Server dhe verifikimet
+FoodSales.sln
 ```
 
-`dotnet-ef` është përcaktuar në `.config/dotnet-tools.json` me versionin 10.0.14, në përputhje me EF Core të projektit. Për një ndryshim të ri real në model, krijoni migrim me emër përshkrues:
-
-```powershell
-dotnet ef migrations add EmriPershkrues --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api --output-dir Persistence/Migrations
-```
-
-Në **Tools → NuGet Package Manager → Package Manager Console**, mbështeten komandat PMC. Zgjidhni FoodSales.Infrastructure te Default project dhe FoodSales.Api si Startup Project; Tools është në Infrastructure, ndërsa API ka Design:
-
-```powershell
-Get-Migration
-Add-Migration "EmriPershkruesINdryshimit"
-Update-Database
-```
-
-Komandat Add-Migration janë shembuj për ndryshime të reja; nuk ka nevojë të krijoni migrim bosh tani. Migrimet ekzistuese janë aplikuar. Ndaloni aplikacionin para krijimit të migrimit nëse Windows raporton skedarë build të bllokuar. Connection string merret nga API/config/user secrets/environment.
-
-## Swagger
-
-Swagger regjistrohet nga `AddApiServices` dhe aktivizohet nga `app.UseDevelopmentSwagger()` në Program.cs vetëm për Development. Dokumenti është `/swagger/v1/swagger.json`; UI është `/swagger`. Endpoint-et dhe asetet u kontrolluan me HTTP 200. Hapja automatike në F5 është konfiguruar, por ende nuk është verifikuar duke kontrolluar vetë Visual Studio-n.
-
-Për veprimet e mbrojtura përdorni `POST /api/account/login` në Swagger, pastaj endpoint-in e dëshiruar. Cookie e sesionit përdoret në të njëjtën adresë; initializer-i lokal merr token të ri antiforgery për çdo POST/PUT/PATCH/DELETE. Autorizimi Admin dhe kontrollet e pronësisë mbeten aktive. Swagger nuk ruan fjalëkalime/tokene në localStorage dhe nuk kërkon përjashtim nga CSP-ja e aplikacionit.
+Controller-at nuk kthejnë entitete EF dhe nuk përdorin drejtpërdrejt kontekstin e databazës. Varësitë dhe rregullat e zgjerimit dokumentohen te [arkitektura](docs/ARCHITECTURE.sq.md).
 
 ## Nisja lokale
 
-Kërkohen .NET SDK 10, Node 22.12+ dhe instancë SQL funksionale. SDK 10 u instalua lokalisht edhe në `C:\Users\Administrator\Documents\ChatGPT\Food-sales-app\.dotnet`. Shtojeni këtë dosje në PATH nëse terminali ende përdor SDK 8.
+### Parakushtet
 
-**LocalDB tani lidhet dhe migrimet u aplikuan në FoodSales.** Rrjedhat kryesore u verifikuan me SQL real në një databazë të veçantë: [rezultatet](docs/VERIFICATION.sq.md). Historiku i problemit të diskut: [SQL-SERVER-SETUP.sq.md](docs/SQL-SERVER-SETUP.sq.md).
+- .NET SDK 10.
+- SQL Server funksional; konfigurimi lokal përdor **SQL Server LocalDB në Windows**.
+- Node.js 22.12+ vetëm nëse ndërtoni edhe frontend-in.
+- Për Visual Studio: version që mbështet .NET 10 dhe workload **ASP.NET and web development**.
 
-Pas rregullimit të SQL, nga kjo dosje:
+Nga dosja e backend-it:
 
 ```powershell
 dotnet restore
-dotnet run --project src/FoodSales.Api -- --migrate
+dotnet tool restore
+dotnet ef database update --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api
+dotnet run --project src/FoodSales.Api --launch-profile FoodSales.Api
+```
+
+| Adresa lokale | Qëllimi |
+| --- | --- |
+| `http://localhost:5080` | API-ja dhe frontend-i, nëse është paketuar |
+| `http://localhost:5080/swagger/index.html` | Dokumentimi interaktiv në Development |
+| `http://localhost:5080/health` | Kontrolli i procesit; nuk provon lidhjen me databazën |
+
+Lidhja e parazgjedhur lokale përdor `(localdb)\MSSQLLocalDB`, databazën `FoodSales` dhe Windows Authentication. Për një instancë tjetër, vendosni `ConnectionStrings__Shop` përmes konfigurimit lokal, user secrets ose environment variables. Kredencialet reale nuk duhen ruajtur në repository.
+
+Produkte ilustruese mund të shtohen veçmas:
+
+```powershell
 dotnet run --project src/FoodSales.Api -- --seed-demo
-dotnet run --project src/FoodSales.Api
 ```
 
-Parazgjedhja lokale është `(localdb)\MSSQLLocalDB`, databaza FoodSales. Për Express vendosni instancën që funksionon në SSMS, p.sh.:
+Kjo komandë lejohet vetëm në Development dhe katalog bosh; nuk krijon klientë, pagesa ose shitje.
+
+### Visual Studio
+
+Hapni `FoodSales.sln`, vendosni **FoodSales.Api** si **Startup Project**, zgjidhni profilin `FoodSales.Api` dhe nisni me F5. Për frontend-in gjatë zhvillimit përdorni `npm run dev` në checkout-in e veçantë. Nisni vetëm një backend në portën 5080.
+
+## Migrimet
+
+### Package Manager Console në Visual Studio
+
+Zgjidhni `FoodSales.Infrastructure` te **Default project** dhe `FoodSales.Api` si startup project:
 
 ```powershell
-$env:ConnectionStrings__Shop = 'Server=.\SQLEXPRESS;Database=FoodSales;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True'
+Add-Migration "PershkrimiINdryshimit"
+Update-Database
 ```
 
-`--seed-demo` shton katër produkte ilustruese vetëm në Development dhe katalog bosh; nuk krijon shitje/klientë/pagesa. Zëvendësoni produktet dhe fotot ilustruese para përdorimit real. `Business` në appsettings mban emrin, telefonin, qytetin, adresën e marrjes dhe hartën. Lokacioni nuk është shpikur.
+`Add-Migration` përdoret vetëm kur ndryshon skema; për një checkout ekzistues mjafton aplikimi i migrimeve me `Update-Database`.
 
-Për adminin e parë përdorni skriptin që kërkon fjalëkalimin privatisht, pa e shfaqur ose ruajtur në kod:
+### Terminali
 
 ```powershell
-.\scripts\Create-Admin.ps1 -Email 'emaili-juaj@example.com'
-.\scripts\Start-App.ps1
+dotnet ef migrations add PershkrimiINdryshimit --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api --output-dir Persistence/Migrations
+dotnet ef database update --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api
 ```
 
-Skriptet gjejnë edhe SDK 10 lokal. Për bootstrap të automatizuar mund të vendosni privatisht variablat `FOODSALES_ADMIN_EMAIL` dhe `FOODSALES_ADMIN_PASSWORD`, pastaj:
+`dotnet-ef` përcaktohet në `.config/dotnet-tools.json`. Factory i kontekstit lexon konfigurimin e API-së dhe lejon migrime pa nisur serverin HTTP. Ndaloni debug-un nëse Windows raporton DLL të bllokuara.
+
+## Administratori fillestar
+
+Nuk ka llogari ose fjalëkalime të paracaktuara. Në PowerShell:
 
 ```powershell
-dotnet run --project src/FoodSales.Api -- --create-admin
+.\scripts\Create-Admin.ps1 -Email 'admin@example.com'
 ```
 
-Nuk ka kredenciale të paracaktuara. Komanda refuzon ndryshimin e rolit të një llogarie ekzistuese. Hiqni variablat e bootstrap-it pas krijimit. Fjalëkalimi: minimum 12 karaktere, shkronja të mëdha/të vogla, numër dhe simbol.
-
-Nëse emaili është regjistruar tashmë si klient, ndaleni aplikacionin dhe përdorni komandën e veçantë lokale për t'i dhënë rol Admin llogarisë ekzistuese:
+Skripti kërkon fjalëkalimin privatisht. Nëse llogaria ekziston si klient dhe ende nuk ka administrator:
 
 ```powershell
-.\scripts\Grant-Admin.ps1 -Email 'emaili-juaj@example.com'
+.\scripts\Grant-Admin.ps1 -Email 'admin@example.com'
 ```
 
-Kjo komandë përdor ASP.NET Core Identity dhe nuk ndryshon fjalëkalimin ose historikun e klientit. Pas nisjes së API-së, /api/account/me rifreskon cookie-n kur roli i ruajtur ndryshon nga roli aktual. Si Create-Admin ashtu edhe Grant-Admin lejohen vetëm nëse nuk ekziston ende asnjë administrator; kontrolli dhe bootstrap-i janë në transaksion Serializable. Pasi krijohet admini i parë, komandat CLI për adminë të tjerë refuzohen.
+Komandat fillestare refuzohen pasi krijohet administratori i parë. Administratorët e tjerë shtohen nga paneli **Administratorët**, brenda një llogarie me rol Admin. Regjistrimi publik krijon vetëm llogari klienti.
 
-### Administratorë të tjerë
+## Autentikimi dhe API-ja
 
-Hyni si admin dhe hapni **Administratorët → Shto administrator**. “Llogari e re” krijon email/fjalëkalim të ri me rolin Admin; “Llogari ekzistuese” i jep rol admin një llogarie pa i ndryshuar fjalëkalimin ose historikun. Roli i sapocaktuar rifreskohet nga /api/account/me; frontend-i provon rikuperimin e sesionit një herë pas një përgjigjeje 403.
+Përdoret **ASP.NET Core Identity me cookie sesioni**, jo Bearer JWT. Cookie-t janë HttpOnly; veprimet që ndryshojnë të dhëna kërkojnë token CSRF.
 
-API: GET/POST `/api/admin/administrators` dhe POST `/api/admin/administrators/grant`. Kërkohet rol Admin, token antiforgery dhe verifikim i rolit aktual në databazë. Krijimi i përdoruesit dhe rolit janë atomikë. Regjistrimi publik nuk pranon zgjedhje roli. Lista është e faqëzuar; veprimet e dhënies së rolit logohen me ID të aktorit/llogarisë dhe kohën lokale, pa fjalëkalime.
+1. Merrni tokenin nga `GET /api/account/csrf` duke ruajtur cookie-t.
+2. Dërgoni tokenin në header-in `X-CSRF-TOKEN` për POST/PUT/PATCH/DELETE.
+3. Hyni përmes `POST /api/account/login`; përdorni të njëjtin sesion për kërkesat pasuese.
 
-API lokale: http://localhost:5080. Në zhvillim nisni veçmas `npm run dev` në frontend; Vite përcjell `/api`, pa CORS të hapur.
+Swagger ofrohet vetëm në Development dhe përfshin konfigurimin lokal për cookie/CSRF. Përgjigjet private të API-së nuk ruhen në cache.
 
-## Publikimi si një app
+| Rrugët kryesore | Përdorimi |
+| --- | --- |
+| `/api/catalog/*` | Produkte, oferta, banera dhe të dhënat e biznesit |
+| `/api/account/*` | Sesioni dhe llogaria |
+| `/api/orders` dhe `/api/orders/mine` | Porosia dhe historiku personal |
+| `/api/admin/products`, `/api/admin/orders`, `/api/admin/customers` | Menaxhimi i shitjeve dhe katalogut |
+| `/api/admin/dashboard` dhe `/api/admin/reports/customers` | Pasqyra dhe raportet financiare |
+| `/api/admin/administrators` | Menaxhimi i administratorëve |
+| `/api/notifications` | Njoftimet e dukshme për përdoruesin e hyrë |
+| `/api/admin/images` dhe `/media/{fileName}` | Ngarkimi dhe shfaqja e fotografive |
+
+Për kontratat, parametrat dhe metodat HTTP shihni Swagger-in lokal.
+
+## Rregullat financiare
+
+- Vetëm porosia **Completed** llogaritet si shitje. Shitjet raportohen sipas përfundimit, pagesat sipas datës së arkëtimit.
+- Pagesa e mëvonshme zvogëlon borxhin pa krijuar shitje të dytë. Pagesa mbi borxhin refuzohet.
+- Stoku zbritet në përfundim të shitjes, brenda transaksionit. Porositë në pritje nuk rezervojnë stok.
+- Pesha reale ndryshon totalin para përfundimit. Sasitë mbështesin deri në 3 shifra dhjetore; copët janë të plota dhe paratë kanë 2 shifra.
+- Borxhi i mbetur në përfundim kërkon miratimin e administratorit. Statusi i pagesës është i ndarë nga statusi i porosisë.
+- Çmimi i posaçëm i biznesit ka përparësi ndaj ofertës publike; çmimet ruhen si snapshot i porosisë.
+- Idempotenca, rowversion dhe transaksionet mbrojnë nga riprovimet dhe ndryshimet konkurrente.
+- Telefoni nuk provon pronësinë: porositë pa llogari nuk lidhen automatikisht me një llogari të regjistruar.
+
+Shembull: shitje **20 €**, pagesë fillestare **12 €**, borxh **8 €**. Pagesa e mëvonshme prej 8 € mbyll borxhin; shitja mbetet 20 €.
+
+## Fotografitë dhe konfigurimi
+
+Fotografitë pranojnë JPG/JPEG/JFIF, PNG dhe WebP deri në 5 MB sipas konfigurimit. Backend-i kontrollon madhësinë, prapashtesën, MIME-in dhe nënshkrimin e përmbajtjes; emrin dhe prapashtesën e ruajtur i gjeneron vetë sipas formatit të njohur.
+
+| Konfigurimi | Qëllimi |
+| --- | --- |
+| `ConnectionStrings:Shop` | Lidhja me SQL Server |
+| `Business` | Emri, qyteti, telefoni dhe të dhënat e marrjes |
+| `ImageUploads:RootPath` | Dosja e fotografive; parazgjedhje `App_Data/uploads` |
+| `ImageUploads:MaxBytes` | Madhësia maksimale e fotografisë |
+| `Pagination` | Madhësia e parazgjedhur dhe kufiri i faqeve |
+
+Skedarët ruhen jashtë `wwwroot`; SQL ruan rrugën `/media/...`. Dosja e fotografive duhet të jetë e qëndrueshme në hostim dhe pjesë e kopjes rezervë. Heqja e fotografisë nga formulari heq lidhjen, jo skedarin fizik.
+
+## Publikimi si një aplikacion
+
+Me dy checkout-e, p.sh. në dosje fqinje, nga backend-i:
 
 ```powershell
-.\scripts\Publish-App.ps1 -FrontendPath 'C:\Users\Administrator\Desktop\food-sales-web'
+.\scripts\Publish-App.ps1 -FrontendPath ../food-sales-web
 ```
 
-Skripti ndërton React, e kopjon në wwwroot dhe publikon gjithë app-in në `artifacts/publish`. Për SDK-në lokale mund të jepni parametrin `-Dotnet` me rrugën e plotë. Dockerfile kërkon që React të jetë paketuar para build-it. Imazhi Docker nuk është ekzekutuar.
+Skripti instalon varësitë e frontend-it, ndërton React/PWA, e kopjon në `wwwroot` dhe publikon aplikacionin në `artifacts/publish`. Mund të jepen parametrat `-OutputPath` dhe `-Dotnet`.
 
-Para prodhimit konfiguroni SQL connection string jashtë kodit me certifikatë të verifikuar, HTTPS/reverse proxy sipas hostit, ruajtje të qëndrueshme të çelësave ASP.NET Data Protection, kopje rezervë dhe orën lokale të serverit për Kosovën. Kontejneri ka TZ=Europe/Belgrade. Mos përdorni konfigurimin LocalDB në prodhim. Asnjë shërbim cloud nuk është krijuar.
+Frontend-i dhe API-ja mund të shërbehen nga e njëjta adresë; SQL Server mbetet shërbim i veçantë. Për prodhim konfiguroni:
 
-## Rregullat kryesore
+- HTTPS, reverse proxy sipas hostit dhe lidhjen SQL jashtë kodit, me certifikatë të verifikuar.
+- Ruajtje të qëndrueshme për fotografitë dhe çelësat ASP.NET Core Data Protection.
+- Kopje rezervë të databazës dhe fotografive, si dhe aplikim të kontrolluar të migrimeve.
+- Zonën kohore të biznesit: projekti përdor kohën lokale për datat dhe raportet.
 
-- Vetëm Completed llogaritet si shitje. Pagesat ruhen veçmas dhe raportohen sipas datës së arkëtimit; shitja sipas datës së përfundimit.
-- Stoku zbritet vetëm në përfundim dhe brenda transaksionit. Porositë në pritje nuk rezervojnë stok.
-- Pesha reale ndryshon totalin para përfundimit; deri 3 shifra dhjetore, kurse copët janë të plota. Paratë me 2 shifra; rrumbullakim për artikull AwayFromZero.
-- Shuma e papaguar në përfundim kërkon miratim admini. Pagesa e mëvonshme vetëm zvogëlon borxhin; pagesa mbi borxhin refuzohet.
-- Statusi i pagesës është i ndarë nga statusi i porosisë. Anulimi nuk lejohet pas përfundimit. Rimbursimet/kthimet nuk janë implementuar.
-- Çmimi i biznesit ka përparësi ndaj ofertës publike. Çmimet dhe afatet ruhen si snapshot të shitjes.
-- Identity cookies HttpOnly/SameSite, antiforgery, role Admin dhe izolim sipas UserId. Telefoni nuk provon pronësi: porositë guest nuk lidhen automatikisht me llogari.
-- RequestId/hash për idempotencën e porosive; RequestId unik për pagesa. Rowversion dhe transaksione Serializable për ndryshimet konkurrente. Konfliktet kërkojnë rifreskim/retry të kontrolluar.
-- Lista të faqëzuara me maksimum 100; projeksione/filtra SQL dhe indekse. Pamja e çmimeve të një biznesi ka kufi 100; faqëzimi i saj i plotë mbetet për zgjerim.
-- Koha përdor DateTime.Now sipas rregullave të dorëzuara; konfiguroni timezone të hostit.
+LocalDB dhe Vite development server nuk janë konfigurim prodhimi. Ngrok shërben për testim të instalimit lokal, jo si hostim i qëndrueshëm. Kodi nuk përfshin llogari ose burime cloud të krijuara automatikisht.
 
-## Verifikimi dhe kufijtë
+## Verifikimi dhe kufizimet
 
-Build backend: 0 gabime / 0 paralajmërime. Build TypeScript/React dhe publish i kombinuar kaluan. Migrimet u aplikuan në FoodSales; rrjedha 20 € / 12 € / 8 €, pesha/stoku dhe izolimi i llogarive kaluan përmes API-së në databazë të veçantë verifikimi. Rezultatet dhe kufijtë e mbetur janë te [VERIFICATION.sq.md](docs/VERIFICATION.sq.md). Nuk u krijuan projekte testimi sipas rregullave të përdoruesit.
+```powershell
+dotnet build FoodSales.sln
+dotnet ef migrations list --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api
+```
 
-Pamja vizuale në browser nuk u verifikua: hapja automatike e localhost nuk u autorizua nga porta e shfletuesit. Nuk u tentua anashkalim. Instalimi në Safari/iPhone dhe Chrome/Android duhet provuar në pajisje me HTTPS.
+[VERIFICATION.sq.md](docs/VERIFICATION.sq.md) përmbledh kontrollet e kryera për porositë, pagesat, stokun, izolimin e llogarive, fotografitë dhe raportimin. Databazat e përkohshme të atyre kontrolleve nuk përfshihen në repository. Projekti nuk përmban ende një suitë të automatizuar testimi regresiv; build-i nuk provon vetë çdo rrjedhë biznesi ose instalimin në pajisje reale.
 
-Fotot ngarkohen nga pajisja; URL-të ekzistuese HTTPS mbeten të mbështetura. Email/SMS/push, rikthimi i fjalëkalimit, verifikimi i emailit dhe MFA mbeten për hapat vijues. Admini konfirmon marrjen/peshën me telefon; klienti i kyçur sheh statusin në llogari. PWA ruan vetëm shell/asetet; API dhe pagesat nuk ruhen offline.
+Ende nuk përfshihen rikthimi i fjalëkalimit, verifikimi i emailit, MFA, rimbursimet dhe njoftimet email/SMS/push jashtë platformës. Njoftimet aktuale janë brenda aplikacionit. Eksporti PDF/Excel realizohet në frontend, me kufi 5,000 rreshta për listë.
 
-API: `/api/catalog/*`, `/api/orders`, `/api/orders/mine`, `/api/account/*`, `/api/admin/products`, `/api/admin/orders`, `/api/admin/customers`, `/api/admin/banners`, `/api/admin/dashboard`. Antiforgery: `GET /api/account/csrf`, pastaj header `X-CSRF-TOKEN`. `GET /health` kontrollon procesin, jo databazën. Raportet përdorin interval `[from,to)` me fund ekskluziv, maksimum 366 ditë.
+## Licenca
 
-### Fotografitë dhe rifreskimi i rolit (6 nëntor 2026)
-Produktet dhe banerat pranojnë fotografi nga pajisja përmes `POST /api/admin/images` (Admin + CSRF). Formatet: JPG, PNG, WebP; deri në 5 MB. Kontrollohen prapashtesa, MIME dhe nënshkrimi i skedarit. Emri krijohet nga serveri; SQL ruan rrugën `/media/...`, ndërsa skedari ruhet jashtë wwwroot, në `ImageUploads:RootPath` (parazgjedhje `App_Data/uploads` brenda content root të API-së). Fotot shërbehen publikisht nga `/media/{fileName}`. Në hostim vendosni këtë dosje në volum persistent dhe përfshijeni në backup; disku i përkohshëm i hostit nuk siguron ruajtje pas redeploy. Heqja e fotos nga formulari heq lidhjen, jo skedarin fizik.
-
-`GET /api/account/me` rifreskon cookie-n nëse roli aktual në databazë ndryshon nga roli i sesionit. Frontend-i rikuperon një herë sesionin kur një kërkesë admini kthen 403. Për ndryshimet e backend-it ndaloni debug-un dhe rindërtoni/rinisni API-në.
-
-### Profili personal
-`GET/PUT /api/account/profile` për klientin dhe administratorin përdorin vetëm ID-në nga sesioni. Emër, telefon, qytet, adresë ruhen te rekordi Customer i lidhur me UserId; emaili i hyrjes te Identity. Për ndryshimin e emailit kërkohet fjalëkalimi aktual (me kontroll lockout). Ruajtja e Identity dhe profilit bëhet në të njëjtin transaksion; Version mbron ndryshimet e njëkohshme. Nuk nevojitet migrim i ri. Rrugët e UI: /llogaria dhe /admin/profili. Admini ka dalje te profili në fund të sidebar-it; në telefon menaxhimi është te menuja e poshtme.
-
-Kërkesat e anuluara trajtohen si 499 vetëm kur RequestAborted është anuluar. Gabimet e tjera mbeten të raportuara. Frontend-i shtyn fillimin e leximeve një event-loop për të shmangur kërkesën e panevojshme gjatë React StrictMode effect replay. Nëse Visual Studio është konfiguruar të ndalojë në çdo hedhje exception-i, ai mund të ndalojë edhe për anulime të trajtuara; nuk është verifikuar konfigurimi lokal i debugger-it.
-
-### Data e dëshiruar e dërgesës
-Porositë online me dërgesë kërkojnë RequestedDeliveryDate (YYYY-MM-DD), jo më herët se dita aktuale sipas orës lokale të biznesit. Marrja vetë nuk kërkon datë dërgese; porositë manuale mund ta kenë opsionale. Ruhet si SQL date nullable për pajtueshmëri me porositë ekzistuese. Shfaqet në formular, konfirmim, detajet e klientit dhe listën/detajet e adminit. Data është kërkesë e klientit; biznesi konfirmon mundësinë. Migrimi AddRequestedDeliveryDate është aplikuar në LocalDB FoodSales (2026-11-06); hostet e tjera duhet të aplikojnë migrimet para nisjes së versionit të ri.
-
-## Galeritë, njoftimet dhe raportet
-
-Banerat kanë deri në 10 fotografi në një renditje të ruajtur; banerat e vjetër me ImageUrl vazhdojnë të shfaqen. Njoftimet ruhen në Notifications, ndërsa leximi ruhet veçmas për secilin përdorues. Porosia online krijon njoftim për adminët dhe për klientin e kyçur; konfirmimi krijon njoftim privat me datën e porosisë. Për porositë pa llogari, konfirmimi i regjistrimit shfaqet në faqen e përfundimit. Nuk dërgohen SMS, email ose push jashtë platformës.
-
-Raportet te /api/admin/reports/customers janë vetëm për adminë dhe përfshijnë porositë, shitjet e përfunduara, arkëtimet dhe borxhin. Historikët e porosive/pagesave janë të faqëzuar; borxhi nuk përfshin porositë në pritje. Eksporti PDF/Excel bëhet në frontend, me leximin e të gjitha faqeve deri në 5,000 rreshta për listë dhe me shuma numerike në Excel. Njoftimet rifreskohen çdo 15 sekonda kur platforma është aktive; leximi nuk ndryshon njoftimet e përdoruesve të tjerë.
-
-Arkitektura dhe udhëzimi i saktë për Add-Migration/Update-Database: [ARCHITECTURE.sq.md](docs/ARCHITECTURE.sq.md). Factory i migrimeve lejon krijimin e kontekstit pa nisur serverin web. Ndryshimet e skemës janë në migrimin AddBannerGalleryAndPlatformNotifications, të aplikuar lokalisht më 6 nëntor 2026.
+Kodi shpërndahet sipas [licencës MIT](LICENSE). Varësitë ruajnë licencat e tyre përkatëse.
