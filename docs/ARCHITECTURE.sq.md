@@ -19,9 +19,9 @@ ILocalClock përdor kohën lokale sipas rregullave të projektit. IUnitOfWork me
 
 `OrderService` mbledh identifikuesit e artikujve dhe përdor `ProductsByIdsAsync`; për bizneset lexon hartën e çmimeve me `SpecialPricesAsync`. Kështu nuk ka query produkti/çmimi për çdo rresht. Kërkesa kufizohet nga validimi në maksimum 50 artikuj. Produktet mbeten të gjurmuara sepse përdoren për ndryshimin e stokut me rowversion; çmimet lexohen me `AsNoTracking`.
 
-Një produkt i munguar refuzohet si më parë. Domain-i vazhdon të kontrollojë sasinë, stokun dhe tranzicionet; IUnitOfWork ruan transaksionin. Nuk është shtuar cache për çmimet ose stokun.
+Një produkt i munguar refuzohet. Domain-i vazhdon të kontrollojë sasinë, stokun dhe tranzicionet; IUnitOfWork ruan transaksionin. Nuk është shtuar cache për çmimet ose stokun.
 
-Controller-at ndahen në skedarë sipas përgjegjësisë; rrugët HTTP dhe autorizimi ruhen gjatë riorganizimit. Formatimi kontrollohet me `.editorconfig` dhe CI; migrimet e gjeneruara nuk riformatohen.
+Controller-at ndahen në skedarë sipas përgjegjësisë; secili deklaron rrugët HTTP dhe autorizimin përkatës. Formatimi kontrollohet me `.editorconfig` dhe CI; migrimet e gjeneruara nuk riformatohen.
 
 ## Migrimet në Visual Studio
 
@@ -47,7 +47,3 @@ Update-Database -Project FoodSales.Infrastructure -StartupProject FoodSales.Api
 Microsoft.EntityFrameworkCore.Tools dhe Design janë në Infrastructure me versionin 10.0.14; API ka Design për projektin startup. ShopDbContextFactory lexon appsettings të API-së, konfigurimin e mjedisit, user-secrets vetëm në Development dhe environment variables. Nuk përmban fjalëkalim të shkruar në kod dhe nuk kërkon nisjen e serverit web për krijimin e kontekstit.
 
 Add-Migration/Update-Database janë komanda të **Package Manager Console**, jo të terminalit të zakonshëm PowerShell. Në terminal të zakonshëm përdoren komandat dotnet ef të dokumentuara në README. Mos ndryshoni migrime që janë aplikuar; krijoni një migrim të ri për ndryshimet e skemës.
-
-## GitHub Languages
-
-GitHub tregon gjuhët e skedarëve: C# për kodin e backend-it; PowerShell për skriptet e nisjes/publikimit/bootstrap-it; HTML, JavaScript, Dockerfile e të tjera për mjetet ndihmëse. .NET dhe ASP.NET Core janë platforma/framework-e, jo emër gjuhe në atë grafik. Përqindjet nuk tregojnë cilësinë e arkitekturës. Migrimet, konfigurimet dhe skriptet e nevojshme mbahen në depo; output-et e build-it, log-et, sekretet dhe fotografitë e ngarkuara përjashtohen.

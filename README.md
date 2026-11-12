@@ -4,7 +4,7 @@
 
 Ndërtuar me ASP.NET Core 10, Entity Framework Core 10 dhe SQL Server. API-ja shërben ndërfaqen React/PWA nga i njëjti origin pas paketimit dhe mban të ndara shitjet, arkëtimet dhe borxhet.
 
-[Frontend-i](https://github.com/adrianmehaj/food-sales-web) · [Arkitektura](docs/ARCHITECTURE.sq.md) · [Verifikimet](docs/VERIFICATION.sq.md) · [Licenca](LICENSE)
+[Frontend-i](https://github.com/adrianmehaj/food-sales-web) · [Arkitektura](docs/ARCHITECTURE.sq.md) · [Licenca](LICENSE)
 
 ## Funksionaliteti
 
@@ -35,7 +35,7 @@ src/
   FoodSales.Infrastructure/
     Persistence/Migrations/
 scripts/                 Nisja, administratori fillestar dhe publikimi
-docs/                    Arkitektura, SQL Server dhe verifikimet
+docs/                    Dokumentimi i arkitekturës
 FoodSales.sln
 ```
 
@@ -197,7 +197,7 @@ dotnet ef migrations list --project src/FoodSales.Infrastructure --startup-proje
 
 Workflow-i [Backend CI](.github/workflows/ci.yml) bën restore, kontroll të formatimit dhe build Release për push në `main` dhe pull request. Ai nuk lidh SQL Server dhe nuk zbaton migrime. `.editorconfig` përcakton formatimin C#.
 
-[VERIFICATION.sq.md](docs/VERIFICATION.sq.md) përmbledh kontrollet e kryera për porositë, pagesat, stokun, izolimin e llogarive, fotografitë dhe raportimin. Databazat e përkohshme të atyre kontrolleve nuk përfshihen në repository. Projekti nuk përmban ende një suitë të automatizuar testimi regresiv; build-i nuk provon vetë çdo rrjedhë biznesi ose instalimin në pajisje reale.
+Projekti nuk përmban ende një suitë të automatizuar testimi regresiv. Kontrollet CI verifikojnë formatimin dhe build-in; rrjedhat e biznesit dhe instalimi PWA kontrollohen veçmas.
 
 Ende nuk përfshihen rikthimi i fjalëkalimit, verifikimi i emailit, MFA, rimbursimet dhe njoftimet email/SMS/push jashtë platformës. Njoftimet aktuale janë brenda aplikacionit. Eksporti PDF/Excel realizohet në frontend, me kufi 5,000 rreshta për listë.
 
