@@ -18,7 +18,8 @@ public static class ApiExtensions
             options.Cookie.SecurePolicy = development ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
         });
         services.AddExceptionHandler<ApiExceptionHandler>();
-        services.AddProblemDetails(); services.AddAuthorization();
+        services.AddProblemDetails();
+        services.AddAuthorization();
         if (development)
         {
             services.AddEndpointsApiExplorer();
@@ -44,7 +45,8 @@ public static class ApiExtensions
 
     public static WebApplication UseDevelopmentSwagger(this WebApplication app)
     {
-        if (!app.Environment.IsDevelopment()) return app;
+        if (!app.Environment.IsDevelopment())
+            return app;
         var assembly = typeof(ApiExtensions).Assembly;
         app.UseSwagger();
         app.UseSwaggerUI(options =>

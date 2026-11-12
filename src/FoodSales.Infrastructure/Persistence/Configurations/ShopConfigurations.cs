@@ -35,7 +35,8 @@ public sealed class ShopConfigurations : IEntityTypeConfiguration<Product>, IEnt
         b.Property(x => x.City).HasMaxLength(80).IsRequired();
         b.Property(x => x.Address).HasMaxLength(500).IsRequired();
         b.Property(x => x.Version).IsRowVersion();
-        b.HasIndex(x => x.Name); b.HasIndex(x => x.Phone);
+        b.HasIndex(x => x.Name);
+        b.HasIndex(x => x.Phone);
         b.HasIndex(x => x.UserId).IsUnique().HasFilter("[UserId] IS NOT NULL");
     }
     public void Configure(EntityTypeBuilder<CustomerPrice> b)
@@ -60,7 +61,10 @@ public sealed class ShopConfigurations : IEntityTypeConfiguration<Product>, IEnt
         b.Property(x => x.Address).HasMaxLength(500).IsRequired();
         b.Property(x => x.Notes).HasMaxLength(1000).IsRequired();
         b.Property(x => x.Version).IsRowVersion();
-        b.Ignore(x => x.Total); b.Ignore(x => x.Paid); b.Ignore(x => x.Debt); b.Ignore(x => x.PaymentStatus);
+        b.Ignore(x => x.Total);
+        b.Ignore(x => x.Paid);
+        b.Ignore(x => x.Debt);
+        b.Ignore(x => x.PaymentStatus);
         b.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
         b.HasMany(x => x.Lines).WithOne().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
         b.HasMany(x => x.Payments).WithOne().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
@@ -85,7 +89,10 @@ public sealed class ShopConfigurations : IEntityTypeConfiguration<Product>, IEnt
     }
     public void Configure(EntityTypeBuilder<Payment> b)
     {
-        b.HasKey(x => x.Id); b.Property(x => x.Id).ValueGeneratedNever(); b.HasIndex(x => x.RequestId).IsUnique(); b.HasIndex(x => x.ReceivedAt);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.HasIndex(x => x.RequestId).IsUnique();
+        b.HasIndex(x => x.ReceivedAt);
         b.Property(x => x.Amount).HasPrecision(18, 2);
         b.Property(x => x.ReceivedBy).HasMaxLength(450).IsRequired();
         b.Property(x => x.Note).HasMaxLength(300).IsRequired();
@@ -93,7 +100,9 @@ public sealed class ShopConfigurations : IEntityTypeConfiguration<Product>, IEnt
     }
     public void Configure(EntityTypeBuilder<OrderEvent> b)
     {
-        b.HasKey(x => x.Id); b.Property(x => x.Id).ValueGeneratedNever(); b.Property(x => x.ActorId).HasMaxLength(450);
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Property(x => x.ActorId).HasMaxLength(450);
         b.HasIndex(x => new { x.OrderId, x.At });
     }
     public void Configure(EntityTypeBuilder<Banner> b)

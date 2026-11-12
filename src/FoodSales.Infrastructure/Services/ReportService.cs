@@ -12,7 +12,10 @@ public sealed class ReportService(ShopDbContext db, PaginationOptions pagination
 {
     private IQueryable<CustomerReportView> Customers() => db.Customers.AsNoTracking().Select(c => new CustomerReportView
     {
-        Id = c.Id, Name = c.Name, Phone = c.Phone, City = c.City,
+        Id = c.Id,
+        Name = c.Name,
+        Phone = c.Phone,
+        City = c.City,
         OrderCount = db.Orders.Count(o => o.CustomerId == c.Id),
         CompletedOrderCount = db.Orders.Count(o => o.CustomerId == c.Id && o.Status == OrderStatus.Completed),
         PendingOrderCount = db.Orders.Count(o => o.CustomerId == c.Id && o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled),
@@ -24,9 +27,12 @@ public sealed class ReportService(ShopDbContext db, PaginationOptions pagination
 
     public async Task<Page<CustomerReportView>> CustomersAsync(int page, int? size, string? search, bool debtOnly, CancellationToken ct)
     {
-        var p = pagination.Normalize(page, size); var query = Customers();
-        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(c => c.Name.StartsWith(search) || c.Phone.StartsWith(search));
-        if (debtOnly) query = query.Where(c => c.Debt > 0);
+        var p = pagination.Normalize(page, size);
+        var query = Customers();
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(c => c.Name.StartsWith(search) || c.Phone.StartsWith(search));
+        if (debtOnly)
+            query = query.Where(c => c.Debt > 0);
         var count = await query.CountAsync(ct);
         var items = await query.OrderByDescending(c => c.Debt).ThenBy(c => c.Name).ThenBy(c => c.Id).Skip((p.Page - 1) * p.Size).Take(p.Size).ToListAsync(ct);
         return new(items, p.Page, p.Size, count);
@@ -35,7 +41,8 @@ public sealed class ReportService(ShopDbContext db, PaginationOptions pagination
     public async Task<Page<ReportOrderView>> OrdersAsync(Guid customerId, int page, int? size, CancellationToken ct)
     {
         await RequireCustomerAsync(customerId, ct);
-        var p = pagination.Normalize(page, size); var query = db.Orders.AsNoTracking().Where(x => x.CustomerId == customerId);
+        var p = pagination.Normalize(page, size);
+        var query = db.Orders.AsNoTracking().Where(x => x.CustomerId == customerId);
         var count = await query.CountAsync(ct);
         var items = await query.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id).Skip((p.Page - 1) * p.Size).Take(p.Size)
             .Select(x => new ReportOrderView(x.Id, x.CreatedAt, x.CompletedAt, x.Status, x.Lines.Sum(l => l.Total), x.Payments.Sum(p => p.Amount),
@@ -54,6 +61,7 @@ public sealed class ReportService(ShopDbContext db, PaginationOptions pagination
     }
     private async Task RequireCustomerAsync(Guid id, CancellationToken ct)
     {
-        if (!await db.Customers.AsNoTracking().AnyAsync(x => x.Id == id, ct)) throw new NotFoundException();
+        if (!await db.Customers.AsNoTracking().AnyAsync(x => x.Id == id, ct))
+            throw new NotFoundException();
     }
 }

@@ -8,12 +8,14 @@ public interface IShopRepository
 {
     Task<Page<ProductView>> ProductsAsync(int page, int size, string? search, string? category, bool offersOnly, bool admin, string? userId, DateTime now, CancellationToken ct);
     Task<Product?> ProductAsync(Guid id, CancellationToken ct);
+    Task<Dictionary<Guid, Product>> ProductsByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
     void Add(Product product);
     Task<Customer?> CustomerAsync(Guid id, CancellationToken ct);
     Task<Customer?> CustomerForUserAsync(string userId, CancellationToken ct);
     void Add(Customer customer);
     Task<Page<CustomerView>> CustomersAsync(int page, int size, string? search, CancellationToken ct);
     Task<decimal?> SpecialPriceAsync(Guid customerId, Guid productId, CancellationToken ct);
+    Task<Dictionary<Guid, decimal>> SpecialPricesAsync(Guid customerId, IReadOnlyCollection<Guid> productIds, CancellationToken ct);
     Task<List<CustomerPriceView>> CustomerPricesAsync(Guid customerId, CancellationToken ct);
     Task SetCustomerPriceAsync(Guid customerId, Guid productId, decimal price, CancellationToken ct);
     Task<Order?> OrderAsync(Guid id, CancellationToken ct);

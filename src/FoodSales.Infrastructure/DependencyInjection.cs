@@ -40,7 +40,8 @@ public static class DependencyInjection
             throw new InvalidOperationException("Invalid pagination configuration.");
         services.AddSingleton(pagination);
         var imageUploads = configuration.GetSection("ImageUploads").Get<ImageUploadOptions>() ?? new ImageUploadOptions();
-        if (imageUploads.MaxBytes is < 1 or > 5 * 1024 * 1024) throw new InvalidOperationException("ImageUploads:MaxBytes must be between 1 byte and 5 MiB.");
+        if (imageUploads.MaxBytes is < 1 or > 5 * 1024 * 1024)
+            throw new InvalidOperationException("ImageUploads:MaxBytes must be between 1 byte and 5 MiB.");
         services.AddSingleton(imageUploads);
         services.AddSingleton<IImageStore, LocalImageStore>();
         services.AddScoped<ImageUploadService>();
@@ -52,7 +53,9 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IAdministratorService, AdministratorService>();
-        services.AddScoped<CatalogService>(); services.AddScoped<CustomerService>(); services.AddScoped<OrderService>();
+        services.AddScoped<CatalogService>();
+        services.AddScoped<CustomerService>();
+        services.AddScoped<OrderService>();
         return services;
     }
 }

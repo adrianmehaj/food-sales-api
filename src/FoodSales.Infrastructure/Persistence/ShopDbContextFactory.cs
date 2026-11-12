@@ -30,8 +30,10 @@ public sealed class ShopDbContextFactory : IDesignTimeDbContextFactory<ShopDbCon
             for (var directory = new DirectoryInfo(origin); directory != null; directory = directory.Parent)
             {
                 var candidate = Path.Combine(directory.FullName, "src", "FoodSales.Api");
-                if (File.Exists(Path.Combine(candidate, "FoodSales.Api.csproj"))) return candidate;
-                if (File.Exists(Path.Combine(directory.FullName, "FoodSales.Api.csproj"))) return directory.FullName;
+                if (File.Exists(Path.Combine(candidate, "FoodSales.Api.csproj")))
+                    return candidate;
+                if (File.Exists(Path.Combine(directory.FullName, "FoodSales.Api.csproj")))
+                    return directory.FullName;
             }
         }
         throw new InvalidOperationException("Open FoodSales.sln or run migration tools from the backend checkout.");

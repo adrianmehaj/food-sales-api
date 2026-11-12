@@ -15,6 +15,14 @@ Controller-at nuk përdorin ShopDbContext dhe nuk kthejnë entitete EF. Listat j
 
 ILocalClock përdor kohën lokale sipas rregullave të projektit. IUnitOfWork menaxhon transaksionet; auth, profile, raporte dhe njoftime kanë ndërfaqe të veçanta. Skedarët kanë emra të gjeneruar dhe kontrolle formati, madhësie dhe autorizimi.
 
+## Leximi i porosive dhe konkurrenca
+
+`OrderService` mbledh identifikuesit e artikujve dhe përdor `ProductsByIdsAsync`; për bizneset lexon hartën e çmimeve me `SpecialPricesAsync`. Kështu nuk ka query produkti/çmimi për çdo rresht. Kërkesa kufizohet nga validimi në maksimum 50 artikuj. Produktet mbeten të gjurmuara sepse përdoren për ndryshimin e stokut me rowversion; çmimet lexohen me `AsNoTracking`.
+
+Një produkt i munguar refuzohet si më parë. Domain-i vazhdon të kontrollojë sasinë, stokun dhe tranzicionet; IUnitOfWork ruan transaksionin. Nuk është shtuar cache për çmimet ose stokun.
+
+Controller-at ndahen në skedarë sipas përgjegjësisë; rrugët HTTP dhe autorizimi ruhen gjatë riorganizimit. Formatimi kontrollohet me `.editorconfig` dhe CI; migrimet e gjeneruara nuk riformatohen.
+
 ## Migrimet në Visual Studio
 
 1. Hapni FoodSales.sln dhe vendosni FoodSales.Api si **Startup Project**.

@@ -23,7 +23,8 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             SqlException => (503, "Lidhja me databazën nuk është e disponueshme. Provoni përsëri."),
             _ => (500, "Ndodhi një gabim. Provoni përsëri.")
         };
-        if (status >= 500) logger.LogError(exception, "Request failed; TraceId {TraceId}", context.TraceIdentifier);
+        if (status >= 500)
+            logger.LogError(exception, "Request failed; TraceId {TraceId}", context.TraceIdentifier);
         context.Response.StatusCode = status;
         await context.Response.WriteAsJsonAsync(new ProblemDetails { Status = status, Title = title, Extensions = { ["traceId"] = context.TraceIdentifier } }, ct);
         return true;

@@ -12,9 +12,12 @@ public sealed class ShopRepository(ShopDbContext db) : IShopRepository
     public async Task<Page<ProductView>> ProductsAsync(int page, int size, string? search, string? category, bool offersOnly, bool admin, string? userId, DateTime now, CancellationToken ct)
     {
         var query = db.Products.AsNoTracking().Where(x => admin || x.IsActive);
-        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(x => x.Name.StartsWith(search));
-        if (!string.IsNullOrWhiteSpace(category)) query = query.Where(x => x.Category == category);
-        if (offersOnly) query = query.Where(x => x.OfferPrice != null && x.OfferStartsAt <= now && x.OfferEndsAt >= now);
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.Name.StartsWith(search));
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(x => x.Category == category);
+        if (offersOnly)
+            query = query.Where(x => x.OfferPrice != null && x.OfferStartsAt <= now && x.OfferEndsAt >= now);
         var count = await query.CountAsync(ct);
         var items = await query.OrderBy(x => x.Name).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
             .Select(x => new ProductView(x.Id, x.Name, x.Description, x.ImageUrl, x.Category, x.Price,
@@ -31,6 +34,8 @@ public sealed class ShopRepository(ShopDbContext db) : IShopRepository
         return new(items, page, size, count);
     }
     public Task<Product?> ProductAsync(Guid id, CancellationToken ct) => db.Products.SingleOrDefaultAsync(x => x.Id == id, ct);
+    public Task<Dictionary<Guid, Product>> ProductsByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
+        db.Products.Where(x => ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
     public void Add(Product product) => db.Products.Add(product);
     public Task<Customer?> CustomerAsync(Guid id, CancellationToken ct) => db.Customers.SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<Customer?> CustomerForUserAsync(string userId, CancellationToken ct) => db.Customers.SingleOrDefaultAsync(x => x.UserId == userId, ct);
@@ -38,7 +43,8 @@ public sealed class ShopRepository(ShopDbContext db) : IShopRepository
     public async Task<Page<CustomerView>> CustomersAsync(int page, int size, string? search, CancellationToken ct)
     {
         var query = db.Customers.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(x => x.Name.StartsWith(search) || x.Phone.StartsWith(search));
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.Name.StartsWith(search) || x.Phone.StartsWith(search));
         var count = await query.CountAsync(ct);
         var items = await query.OrderBy(x => x.Name).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
             .Select(x => new CustomerView(x.Id, x.Name, x.Phone, x.City, x.Address, x.Type, x.PaymentTermDays,
@@ -49,14 +55,19 @@ public sealed class ShopRepository(ShopDbContext db) : IShopRepository
     }
     public Task<decimal?> SpecialPriceAsync(Guid customerId, Guid productId, CancellationToken ct) => db.CustomerPrices
         .Where(x => x.CustomerId == customerId && x.ProductId == productId).Select(x => (decimal?)x.Price).SingleOrDefaultAsync(ct);
+    public Task<Dictionary<Guid, decimal>> SpecialPricesAsync(Guid customerId, IReadOnlyCollection<Guid> productIds, CancellationToken ct) =>
+        db.CustomerPrices.AsNoTracking().Where(x => x.CustomerId == customerId && productIds.Contains(x.ProductId))
+            .ToDictionaryAsync(x => x.ProductId, x => x.Price, ct);
     public Task<List<CustomerPriceView>> CustomerPricesAsync(Guid customerId, CancellationToken ct) => db.CustomerPrices.AsNoTracking()
         .Where(x => x.CustomerId == customerId).OrderBy(x => x.ProductId).Take(100)
         .Select(x => new CustomerPriceView(x.ProductId, db.Products.Where(p => p.Id == x.ProductId).Select(p => p.Name).First(), x.Price)).ToListAsync(ct);
     public async Task SetCustomerPriceAsync(Guid customerId, Guid productId, decimal price, CancellationToken ct)
     {
         var existing = await db.CustomerPrices.SingleOrDefaultAsync(x => x.CustomerId == customerId && x.ProductId == productId, ct);
-        if (existing == null) db.CustomerPrices.Add(new CustomerPrice { CustomerId = customerId, ProductId = productId, Price = price });
-        else existing.Price = price;
+        if (existing == null)
+            db.CustomerPrices.Add(new CustomerPrice { CustomerId = customerId, ProductId = productId, Price = price });
+        else
+            existing.Price = price;
     }
     public Task<Order?> OrderAsync(Guid id, CancellationToken ct) => Aggregate().SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<Order?> OrderByRequestAsync(Guid requestId, CancellationToken ct) => Aggregate().SingleOrDefaultAsync(x => x.RequestId == requestId, ct);
@@ -78,9 +89,12 @@ public sealed class ShopRepository(ShopDbContext db) : IShopRepository
     public async Task<Page<OrderView>> OrdersAsync(int page, int size, string? userId, OrderStatus? status, Guid? customerId, CancellationToken ct)
     {
         var query = db.Orders.AsNoTracking().AsSplitQuery();
-        if (userId != null) query = query.Where(x => x.Customer.UserId == userId);
-        if (status.HasValue) query = query.Where(x => x.Status == status);
-        if (customerId.HasValue) query = query.Where(x => x.CustomerId == customerId);
+        if (userId != null)
+            query = query.Where(x => x.Customer.UserId == userId);
+        if (status.HasValue)
+            query = query.Where(x => x.Status == status);
+        if (customerId.HasValue)
+            query = query.Where(x => x.CustomerId == customerId);
         var count = await query.CountAsync(ct);
         var items = await query.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size).Select(OrderProjection).ToListAsync(ct);
         return new(items, page, size, count);

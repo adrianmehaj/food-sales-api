@@ -15,7 +15,10 @@ public sealed class AccountController(IAccountService service) : ControllerBase
     public IActionResult Csrf([FromServices] IAntiforgery antiforgery)
     {
         Response.Headers.CacheControl = "no-store";
-        return Ok(new { token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken });
+        return Ok(new
+        {
+            token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken
+        });
     }
     [HttpGet("me"), AllowAnonymous]
     public async Task<ActionResult<AccountView?>> Me(CancellationToken ct)
@@ -29,5 +32,9 @@ public sealed class AccountController(IAccountService service) : ControllerBase
     [HttpPost("register"), AllowAnonymous, EnableRateLimiting("auth")]
     public Task<AccountView> Register(RegisterRequest request, CancellationToken ct) => service.RegisterAsync(request, ct);
     [HttpPost("logout"), Authorize]
-    public async Task<IActionResult> Logout() { await service.LogoutAsync(); return NoContent(); }
+    public async Task<IActionResult> Logout()
+    {
+        await service.LogoutAsync();
+        return NoContent();
+    }
 }

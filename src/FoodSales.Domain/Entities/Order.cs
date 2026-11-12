@@ -6,44 +6,95 @@ namespace FoodSales.Domain.Entities;
 public sealed class Order
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid RequestId { get; private set; }
+    public Guid RequestId
+    {
+        get; private set;
+    }
     public string RequestHash { get; private set; } = "";
-    public string? CreatedBy { get; private set; }
-    public Guid CustomerId { get; private set; }
+    public string? CreatedBy
+    {
+        get; private set;
+    }
+    public Guid CustomerId
+    {
+        get; private set;
+    }
     public Customer Customer { get; private set; } = null!;
     public string CustomerName { get; private set; } = "";
     public string Phone { get; private set; } = "";
     public string City { get; private set; } = "";
     public string Address { get; private set; } = "";
     public string Notes { get; private set; } = "";
-    public Fulfillment Fulfillment { get; private set; }
-    public OrderSource Source { get; private set; }
+    public Fulfillment Fulfillment
+    {
+        get; private set;
+    }
+    public OrderSource Source
+    {
+        get; private set;
+    }
     public OrderStatus Status { get; private set; } = OrderStatus.New;
-    public DateTime CreatedAt { get; private set; }
-    public DateOnly? RequestedDeliveryDate { get; private set; }
-    public DateTime? CompletedAt { get; private set; }
-    public DateTime? DueAt { get; private set; }
-    public string? CreditApprovedBy { get; private set; }
+    public DateTime CreatedAt
+    {
+        get; private set;
+    }
+    public DateOnly? RequestedDeliveryDate
+    {
+        get; private set;
+    }
+    public DateTime? CompletedAt
+    {
+        get; private set;
+    }
+    public DateTime? DueAt
+    {
+        get; private set;
+    }
+    public string? CreditApprovedBy
+    {
+        get; private set;
+    }
     public List<OrderLine> Lines { get; private set; } = [];
     public List<Payment> Payments { get; private set; } = [];
     public List<OrderEvent> History { get; private set; } = [];
     public byte[] Version { get; private set; } = [];
-    public long Revision { get; private set; }
+    public long Revision
+    {
+        get; private set;
+    }
     public decimal Total => Lines.Sum(x => x.Total);
     public decimal Paid => Payments.Sum(x => x.Amount);
     public decimal Debt => Status == OrderStatus.Completed ? Total - Paid : 0;
     public PaymentStatus PaymentStatus => Paid == 0 ? PaymentStatus.Unpaid : Paid < Total ? PaymentStatus.PartiallyPaid : PaymentStatus.Paid;
 
-    private Order() { }
+    private Order()
+    {
+    }
 
     public static Order Create(Customer customer, Guid requestId, string hash, OrderSource source, Fulfillment fulfillment,
         string name, string phone, string city, string address, string notes, string? actor, DateTime now, DateOnly? requestedDeliveryDate = null)
     {
-        if (requestId == Guid.Empty || !Enum.IsDefined(fulfillment)) throw new BusinessException("Porosi e pavlefshme.");
-        if (requestedDeliveryDate < DateOnly.FromDateTime(now)) throw new BusinessException("Data e dërgesës nuk mund të jetë në të kaluarën.");
-        var order = new Order { CustomerId = customer.Id, Customer = customer, RequestId = requestId, RequestHash = hash,
-            Source = source, Fulfillment = fulfillment, CustomerName = name, Phone = phone, City = city, Address = address,
-            Notes = notes, CreatedBy = actor, CreatedAt = now, RequestedDeliveryDate = requestedDeliveryDate };
+        if (requestId == Guid.Empty || !Enum.IsDefined(fulfillment))
+            throw new BusinessException("Porosi e pavlefshme.");
+        if (requestedDeliveryDate < DateOnly.FromDateTime(now))
+            throw new BusinessException("Data e dërgesës nuk mund të jetë në të kaluarën.");
+        var order = new Order
+        {
+            CustomerId = customer.Id,
+            Customer = customer,
+            RequestId = requestId,
+            RequestHash = hash,
+            Source = source,
+            Fulfillment = fulfillment,
+            CustomerName = name,
+            Phone = phone,
+            City = city,
+            Address = address,
+            Notes = notes,
+            CreatedBy = actor,
+            CreatedAt = now,
+            RequestedDeliveryDate = requestedDeliveryDate
+        };
         order.History.Add(new OrderEvent(OrderStatus.New, now, actor));
         return order;
     }
@@ -57,7 +108,8 @@ public sealed class Order
 
     public void SetFinalQuantity(Guid lineId, decimal quantity)
     {
-        if (Status is OrderStatus.Completed or OrderStatus.Cancelled) throw new BusinessException("Porosia është mbyllur.");
+        if (Status is OrderStatus.Completed or OrderStatus.Cancelled)
+            throw new BusinessException("Porosia është mbyllur.");
         var line = Lines.SingleOrDefault(x => x.Id == lineId) ?? throw new BusinessException("Artikulli nuk u gjet.");
         line.SetFinalQuantity(quantity);
         Revision++;
@@ -74,8 +126,11 @@ public sealed class Order
                 (OrderStatus.Preparing, OrderStatus.ReadyForPickup) => Fulfillment == Fulfillment.Pickup,
                 _ => false
             };
-        if (!allowed) throw new BusinessException("Ky ndryshim i statusit nuk lejohet.");
-        Status = next; Revision++; History.Add(new OrderEvent(next, now, actor));
+        if (!allowed)
+            throw new BusinessException("Ky ndryshim i statusit nuk lejohet.");
+        Status = next;
+        Revision++;
+        History.Add(new OrderEvent(next, now, actor));
     }
 
     public void Complete(string actor, DateTime now, bool approveCredit, int termDays, decimal initialPayment, Guid paymentId)
@@ -84,12 +139,21 @@ public sealed class Order
             throw new BusinessException("Porosia nuk mund të përfundohet.");
         if (Source == OrderSource.Online && Status is not (OrderStatus.Delivering or OrderStatus.ReadyForPickup))
             throw new BusinessException("Porosia duhet të jetë në dërgesë ose gati për marrje.");
-        if (initialPayment < 0 || initialPayment > Total) throw new BusinessException("Pagesa duhet të jetë ndërmjet zeros dhe totalit.");
-        if (initialPayment < Total && !approveCredit) throw new BusinessException("Borxhi kërkon miratimin e adminit.");
-        Status = OrderStatus.Completed; CompletedAt = now; Revision++;
-        if (initialPayment < Total) { CreditApprovedBy = actor; DueAt = now.Date.AddDays(termDays); }
+        if (initialPayment < 0 || initialPayment > Total)
+            throw new BusinessException("Pagesa duhet të jetë ndërmjet zeros dhe totalit.");
+        if (initialPayment < Total && !approveCredit)
+            throw new BusinessException("Borxhi kërkon miratimin e adminit.");
+        Status = OrderStatus.Completed;
+        CompletedAt = now;
+        Revision++;
+        if (initialPayment < Total)
+        {
+            CreditApprovedBy = actor;
+            DueAt = now.Date.AddDays(termDays);
+        }
         History.Add(new OrderEvent(Status, now, actor));
-        if (initialPayment > 0) AddPayment(initialPayment, paymentId, actor, now, "Pagesë në përfundim");
+        if (initialPayment > 0)
+            AddPayment(initialPayment, paymentId, actor, now, "Pagesë në përfundim");
     }
 
     public void AddPayment(decimal amount, Guid requestId, string actor, DateTime now, string note)
@@ -97,7 +161,8 @@ public sealed class Order
         var existing = Payments.SingleOrDefault(x => x.RequestId == requestId);
         if (existing != null)
         {
-            if (existing.Amount != amount || existing.Note != note) throw new BusinessException("Identifikuesi i pagesës është përdorur për një pagesë tjetër.");
+            if (existing.Amount != amount || existing.Note != note)
+                throw new BusinessException("Identifikuesi i pagesës është përdorur për një pagesë tjetër.");
             return;
         }
         if (Status != OrderStatus.Completed || amount <= 0 || decimal.Round(amount, 2) != amount || amount > Total - Paid || requestId == Guid.Empty)
@@ -110,19 +175,46 @@ public sealed class Order
 public sealed class OrderLine
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid OrderId { get; private set; }
-    public Guid ProductId { get; private set; }
+    public Guid OrderId
+    {
+        get; private set;
+    }
+    public Guid ProductId
+    {
+        get; private set;
+    }
     public string ProductName { get; private set; } = "";
-    public Unit Unit { get; private set; }
-    public decimal RequestedQuantity { get; private set; }
-    public decimal FinalQuantity { get; private set; }
-    public decimal UnitPrice { get; private set; }
-    public decimal Total { get; private set; }
-    private OrderLine() { }
+    public Unit Unit
+    {
+        get; private set;
+    }
+    public decimal RequestedQuantity
+    {
+        get; private set;
+    }
+    public decimal FinalQuantity
+    {
+        get; private set;
+    }
+    public decimal UnitPrice
+    {
+        get; private set;
+    }
+    public decimal Total
+    {
+        get; private set;
+    }
+    private OrderLine()
+    {
+    }
     internal OrderLine(Product product, decimal quantity, decimal price)
     {
-        ProductId = product.Id; ProductName = product.Name; Unit = product.Unit; UnitPrice = price;
-        SetFinalQuantity(quantity); RequestedQuantity = quantity;
+        ProductId = product.Id;
+        ProductName = product.Name;
+        Unit = product.Unit;
+        UnitPrice = price;
+        SetFinalQuantity(quantity);
+        RequestedQuantity = quantity;
     }
     internal void SetFinalQuantity(decimal quantity)
     {
@@ -136,24 +228,63 @@ public sealed class OrderLine
 public sealed class Payment
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid OrderId { get; private set; }
-    public Guid RequestId { get; private set; }
-    public decimal Amount { get; private set; }
-    public DateTime ReceivedAt { get; private set; }
+    public Guid OrderId
+    {
+        get; private set;
+    }
+    public Guid RequestId
+    {
+        get; private set;
+    }
+    public decimal Amount
+    {
+        get; private set;
+    }
+    public DateTime ReceivedAt
+    {
+        get; private set;
+    }
     public string ReceivedBy { get; private set; } = "";
     public string Note { get; private set; } = "";
-    private Payment() { }
+    private Payment()
+    {
+    }
     internal Payment(Guid requestId, decimal amount, DateTime now, string actor, string note)
-    { RequestId = requestId; Amount = amount; ReceivedAt = now; ReceivedBy = actor; Note = note; }
+    {
+        RequestId = requestId;
+        Amount = amount;
+        ReceivedAt = now;
+        ReceivedBy = actor;
+        Note = note;
+    }
 }
 
 public sealed class OrderEvent
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid OrderId { get; private set; }
-    public OrderStatus Status { get; private set; }
-    public DateTime At { get; private set; }
-    public string? ActorId { get; private set; }
-    private OrderEvent() { }
-    internal OrderEvent(OrderStatus status, DateTime at, string? actor) { Status = status; At = at; ActorId = actor; }
+    public Guid OrderId
+    {
+        get; private set;
+    }
+    public OrderStatus Status
+    {
+        get; private set;
+    }
+    public DateTime At
+    {
+        get; private set;
+    }
+    public string? ActorId
+    {
+        get; private set;
+    }
+    private OrderEvent()
+    {
+    }
+    internal OrderEvent(OrderStatus status, DateTime at, string? actor)
+    {
+        Status = status;
+        At = at;
+        ActorId = actor;
+    }
 }

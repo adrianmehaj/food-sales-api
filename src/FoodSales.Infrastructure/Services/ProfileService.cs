@@ -34,17 +34,29 @@ public sealed class ProfileService(ShopDbContext db, UserManager<IdentityUser> u
                 if (string.IsNullOrEmpty(request.CurrentPassword) || !(await signIn.CheckPasswordSignInAsync(user, request.CurrentPassword, lockoutOnFailure: true)).Succeeded)
                     throw new BusinessException("Për të ndryshuar emailin, shkruani fjalëkalimin aktual të saktë.");
                 var existing = await users.FindByEmailAsync(email);
-                if (existing != null && existing.Id != userId) throw new ConflictException("Ky email përdoret nga një llogari tjetër.");
-                user.Email = email; user.UserName = email; user.EmailConfirmed = false;
+                if (existing != null && existing.Id != userId)
+                    throw new ConflictException("Ky email përdoret nga një llogari tjetër.");
+                user.Email = email;
+                user.UserName = email;
+                user.EmailConfirmed = false;
             }
-            user.PhoneNumber = request.Phone.Trim(); user.PhoneNumberConfirmed = false;
+            user.PhoneNumber = request.Phone.Trim();
+            user.PhoneNumberConfirmed = false;
             var result = await users.UpdateAsync(user);
-            if (!result.Succeeded) throw new BusinessException("Profili nuk u ruajt. Kontrolloni të dhënat dhe provoni përsëri.");
-            if (customer == null) { customer = new Customer { UserId = userId }; db.Customers.Add(customer); }
-            customer.Name = request.Name.Trim(); customer.Phone = request.Phone.Trim();
-            customer.City = request.City.Trim(); customer.Address = request.Address.Trim();
+            if (!result.Succeeded)
+                throw new BusinessException("Profili nuk u ruajt. Kontrolloni të dhënat dhe provoni përsëri.");
+            if (customer == null)
+            {
+                customer = new Customer { UserId = userId };
+                db.Customers.Add(customer);
+            }
+            customer.Name = request.Name.Trim();
+            customer.Phone = request.Phone.Trim();
+            customer.City = request.City.Trim();
+            customer.Address = request.Address.Trim();
             // An email-only edit must also advance the profile's concurrency version.
-            if (db.Entry(customer).State != EntityState.Added) db.Entry(customer).Property(x => x.Name).IsModified = true;
+            if (db.Entry(customer).State != EntityState.Added)
+                db.Entry(customer).Property(x => x.Name).IsModified = true;
             return true;
         }, ct);
         var updated = await users.FindByIdAsync(userId) ?? throw new NotFoundException();

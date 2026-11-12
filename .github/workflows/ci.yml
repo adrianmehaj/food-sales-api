@@ -1,0 +1,24 @@
+name: Backend CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore FoodSales.sln
+      - run: dotnet format whitespace FoodSales.sln --no-restore --verify-no-changes --exclude src/FoodSales.Infrastructure/Persistence/Migrations
+      - run: dotnet build FoodSales.sln --configuration Release --no-restore

@@ -58,10 +58,12 @@ public sealed class AdministratorService(ShopDbContext db, UserManager<IdentityU
             await RequireAdministratorAsync(actorId, ct);
             var user = await users.FindByEmailAsync(request.Email.Trim()) ?? throw new NotFoundException();
             var isAdmin = await users.IsInRoleAsync(user, "Admin");
-            if (!isAdmin) RequireRoleResult(await users.AddToRoleAsync(user, "Admin"));
+            if (!isAdmin)
+                RequireRoleResult(await users.AddToRoleAsync(user, "Admin"));
             return (new AdministratorView(user.Id, user.Email!), !isAdmin);
         }, ct);
-        if (changed) logger.LogInformation("Administrator {ActorId} granted Admin role to account {TargetId} at {LocalTime}.", actorId, result.Id, clock.Now);
+        if (changed)
+            logger.LogInformation("Administrator {ActorId} granted Admin role to account {TargetId} at {LocalTime}.", actorId, result.Id, clock.Now);
         return result;
     }
 
@@ -75,6 +77,7 @@ public sealed class AdministratorService(ShopDbContext db, UserManager<IdentityU
 
     private static void RequireRoleResult(IdentityResult result)
     {
-        if (!result.Succeeded) throw new ConflictException("Roli nuk u ruajt. Rifreskojeni listën dhe provoni përsëri.");
+        if (!result.Succeeded)
+            throw new ConflictException("Roli nuk u ruajt. Rifreskojeni listën dhe provoni përsëri.");
     }
 }

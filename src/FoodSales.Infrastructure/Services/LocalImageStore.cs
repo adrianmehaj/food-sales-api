@@ -12,14 +12,16 @@ public sealed class LocalImageStore : IImageStore
     public LocalImageStore(IConfiguration configuration, IHostEnvironment environment)
     {
         var configuredPath = configuration["ImageUploads:RootPath"] ?? "App_Data/uploads";
-        if (string.IsNullOrWhiteSpace(configuredPath)) throw new InvalidOperationException("Configure ImageUploads:RootPath.");
+        if (string.IsNullOrWhiteSpace(configuredPath))
+            throw new InvalidOperationException("Configure ImageUploads:RootPath.");
         _root = Path.GetFullPath(Path.Combine(environment.ContentRootPath, configuredPath));
     }
 
     public async Task<string> SaveAsync(Stream content, string extension, CancellationToken ct)
     {
         var fileName = Guid.NewGuid().ToString("N") + extension;
-        if (ImageFileNames.ContentType(fileName) == null) throw new InvalidOperationException("Unsupported image format.");
+        if (ImageFileNames.ContentType(fileName) == null)
+            throw new InvalidOperationException("Unsupported image format.");
         Directory.CreateDirectory(_root);
         var temporaryPath = Path.Combine(_root, fileName + ".tmp");
         var finalPath = Path.Combine(_root, fileName);
@@ -40,7 +42,8 @@ public sealed class LocalImageStore : IImageStore
     {
         ct.ThrowIfCancellationRequested();
         var type = ImageFileNames.ContentType(fileName);
-        if (type == null) return Task.FromResult<ImageFile?>(null);
+        if (type == null)
+            return Task.FromResult<ImageFile?>(null);
         try
         {
             Stream file = new FileStream(Path.Combine(_root, fileName), FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous);

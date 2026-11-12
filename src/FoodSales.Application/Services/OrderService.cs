@@ -15,11 +15,17 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
     public Task<OrderReceipt> CreateAsync(CreateOrderRequest r, bool manual, string? actor, CancellationToken ct) => unit.ExecuteAsync(async () =>
     {
         ValidateCreate(r, manual);
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { Request = r, Actor = actor, Manual = manual }))));
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
+        {
+            Request = r,
+            Actor = actor,
+            Manual = manual
+        }))));
         var previous = await store.OrderByRequestAsync(r.RequestId, ct);
         if (previous != null)
         {
-            if (previous.RequestHash != hash) throw new ConflictException("Identifikuesi është përdorur për një porosi tjetër.");
+            if (previous.RequestHash != hash)
+                throw new ConflictException("Identifikuesi është përdorur për një porosi tjetër.");
             return new OrderReceipt(previous.Id, previous.Total, previous.Status);
         }
         var customer = await ResolveCustomerAsync(r, manual, actor, ct);
@@ -27,14 +33,22 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
             throw new BusinessException("Zgjidhni datën e dëshiruar të dërgesës.");
         var order = Order.Create(customer, r.RequestId, hash, manual ? OrderSource.Manual : OrderSource.Online,
             r.Fulfillment, r.Name.Trim(), r.Phone.Trim(), r.City.Trim(), r.Address.Trim(), r.Notes.Trim(), actor, clock.Now, r.RequestedDeliveryDate);
+        var productIds = r.Items.Select(x => x.ProductId).ToArray();
+        var products = await store.ProductsByIdsAsync(productIds, ct);
+        var specialPrices = customer.Type == CustomerType.Business
+            ? await store.SpecialPricesAsync(customer.Id, productIds, ct)
+            : new Dictionary<Guid, decimal>();
+        var now = clock.Now;
         foreach (var item in r.Items)
         {
-            var product = await store.ProductAsync(item.ProductId, ct) ?? throw new NotFoundException();
-            var price = customer.Type == CustomerType.Business ? await store.SpecialPriceAsync(customer.Id, product.Id, ct) : null;
-            order.AddLine(product, item.Quantity, price ?? product.PriceAt(clock.Now));
+            if (!products.TryGetValue(item.ProductId, out var product))
+                throw new NotFoundException();
+            var price = specialPrices.TryGetValue(product.Id, out var specialPrice) ? specialPrice : product.PriceAt(now);
+            order.AddLine(product, item.Quantity, price);
         }
         store.Add(order);
-        if (!manual) notifications.OrderCreated(order);
+        if (!manual)
+            notifications.OrderCreated(order);
         if (manual && r.CompleteImmediately)
         {
             await CompleteCoreAsync(order, actor!, r.InitialPayment, r.ApproveCredit, r.RequestId, ct);
@@ -55,7 +69,8 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
     {
         var order = await RequiredAsync(id, r.Version, ct);
         order.MoveTo(r.Status, actor, clock.Now);
-        if (r.Status == OrderStatus.Confirmed) notifications.OrderConfirmed(order);
+        if (r.Status == OrderStatus.Confirmed)
+            notifications.OrderConfirmed(order);
         return true;
     }, ct);
 
@@ -76,7 +91,8 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
     public Task<bool> AddPaymentAsync(Guid id, PaymentRequest r, string actor, CancellationToken ct) => unit.ExecuteAsync(async () =>
     {
         var order = await store.OrderAsync(id, ct) ?? throw new NotFoundException();
-        if (await store.PaymentRequestExistsAsync(r.RequestId, id, ct)) throw new ConflictException("Identifikuesi i pagesës është përdorur.");
+        if (await store.PaymentRequestExistsAsync(r.RequestId, id, ct))
+            throw new ConflictException("Identifikuesi i pagesës është përdorur.");
         order.AddPayment(r.Amount, r.RequestId, actor, clock.Now, r.Note.Trim());
         return true;
     }, ct);
@@ -85,7 +101,8 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
     {
         var start = (from ?? clock.Now.Date.AddDays(-6)).Date;
         var end = (to ?? clock.Now.Date.AddDays(1)).Date;
-        if (end <= start || (end - start).TotalDays > 366) throw new BusinessException("Periudha duhet të jetë nga 1 deri në 366 ditë.");
+        if (end <= start || (end - start).TotalDays > 366)
+            throw new BusinessException("Periudha duhet të jetë nga 1 deri në 366 ditë.");
         return store.DashboardAsync(start, end, ct);
     }
 
@@ -101,20 +118,24 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
         if (payment > 0 && await store.PaymentRequestExistsAsync(paymentId, order.Id, ct))
             throw new ConflictException("Identifikuesi i pagesës është përdorur.");
         order.Complete(actor, clock.Now, approveCredit, order.Customer.PaymentTermDays, payment, paymentId);
+        var products = await store.ProductsByIdsAsync(order.Lines.Select(x => x.ProductId).ToArray(), ct);
         foreach (var line in order.Lines)
         {
-            var product = await store.ProductAsync(line.ProductId, ct) ?? throw new NotFoundException();
+            if (!products.TryGetValue(line.ProductId, out var product))
+                throw new NotFoundException();
             product.DeductStock(line.FinalQuantity);
         }
     }
 
     private async Task<Customer> ResolveCustomerAsync(CreateOrderRequest r, bool manual, string? actor, CancellationToken ct)
     {
-        if (manual && r.CustomerId.HasValue) return await store.CustomerAsync(r.CustomerId.Value, ct) ?? throw new NotFoundException();
+        if (manual && r.CustomerId.HasValue)
+            return await store.CustomerAsync(r.CustomerId.Value, ct) ?? throw new NotFoundException();
         if (!manual && actor != null)
         {
             var owner = await store.CustomerForUserAsync(actor, ct);
-            if (owner != null) return owner;
+            if (owner != null)
+                return owner;
         }
         // A matching phone number does not prove account ownership. Guest records are never linked automatically.
         var customer = new Customer { UserId = manual ? null : actor, Name = r.Name.Trim(), Phone = r.Phone.Trim(), City = r.City.Trim(), Address = r.Address.Trim() };
@@ -126,7 +147,8 @@ public sealed class OrderService(IShopRepository store, IUnitOfWork unit, ILocal
     {
         if (r.RequestId == Guid.Empty || r.Items.Count is < 1 or > 50 || r.Items.Select(x => x.ProductId).Distinct().Count() != r.Items.Count)
             throw new BusinessException("Porosia duhet të ketë 1–50 produkte pa përsëritje.");
-        if (r.Fulfillment == Fulfillment.Delivery && string.IsNullOrWhiteSpace(r.Address)) throw new BusinessException("Shkruani adresën e dërgesës.");
+        if (r.Fulfillment == Fulfillment.Delivery && string.IsNullOrWhiteSpace(r.Address))
+            throw new BusinessException("Shkruani adresën e dërgesës.");
         if (!manual && (r.CustomerId.HasValue || r.CompleteImmediately || r.ApproveCredit || r.InitialPayment != 0))
             throw new BusinessException("Klienti mund të krijojë vetëm porosi të re.");
         if (manual && !r.CompleteImmediately && (r.InitialPayment != 0 || r.ApproveCredit))

@@ -20,12 +20,12 @@ Ndërtuar me ASP.NET Core 10, Entity Framework Core 10 dhe SQL Server. API-ja sh
 
 ## Teknologjitë dhe arkitektura
 
-| Shtresa | Përgjegjësia |
-| --- | --- |
-| `FoodSales.Api` | HTTP, controller-at, autorizimi, CSRF, trajtimi i gabimeve dhe Swagger |
-| `FoodSales.Application` | Kontratat, ndërfaqet dhe rrjedhat e përdorimit |
-| `FoodSales.Domain` | Entitetet dhe rregullat e biznesit |
-| `FoodSales.Infrastructure` | EF Core, SQL Server, Identity, ruajtja e skedarëve dhe raportet |
+| Shtresa                    | Përgjegjësia                                                           |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `FoodSales.Api`            | HTTP, controller-at, autorizimi, CSRF, trajtimi i gabimeve dhe Swagger |
+| `FoodSales.Application`    | Kontratat, ndërfaqet dhe rrjedhat e përdorimit                         |
+| `FoodSales.Domain`         | Entitetet dhe rregullat e biznesit                                     |
+| `FoodSales.Infrastructure` | EF Core, SQL Server, Identity, ruajtja e skedarëve dhe raportet        |
 
 ```text
 src/
@@ -38,6 +38,8 @@ scripts/                 Nisja, administratori fillestar dhe publikimi
 docs/                    Arkitektura, SQL Server dhe verifikimet
 FoodSales.sln
 ```
+
+Çdo controller ka skedarin e vet. Produktet e një porosie lexohen me një kërkesë SQL të kufizuar nga lista e artikujve; çmimet e veçanta të biznesit lexohen gjithashtu në grup. Përfundimi i shitjes ruan gjurmimin EF dhe kontrollin e versionit të stokut.
 
 Controller-at nuk kthejnë entitete EF dhe nuk përdorin drejtpërdrejt kontekstin e databazës. Varësitë dhe rregullat e zgjerimit dokumentohen te [arkitektura](docs/ARCHITECTURE.sq.md).
 
@@ -59,11 +61,11 @@ dotnet ef database update --project src/FoodSales.Infrastructure --startup-proje
 dotnet run --project src/FoodSales.Api --launch-profile FoodSales.Api
 ```
 
-| Adresa lokale | Qëllimi |
-| --- | --- |
-| `http://localhost:5080` | API-ja dhe frontend-i, nëse është paketuar |
-| `http://localhost:5080/swagger/index.html` | Dokumentimi interaktiv në Development |
-| `http://localhost:5080/health` | Kontrolli i procesit; nuk provon lidhjen me databazën |
+| Adresa lokale                              | Qëllimi                                               |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `http://localhost:5080`                    | API-ja dhe frontend-i, nëse është paketuar            |
+| `http://localhost:5080/swagger/index.html` | Dokumentimi interaktiv në Development                 |
+| `http://localhost:5080/health`             | Kontrolli i procesit; nuk provon lidhjen me databazën |
 
 Lidhja e parazgjedhur lokale përdor `(localdb)\MSSQLLocalDB`, databazën `FoodSales` dhe Windows Authentication. Për një instancë tjetër, vendosni `ConnectionStrings__Shop` përmes konfigurimit lokal, user secrets ose environment variables. Kredencialet reale nuk duhen ruajtur në repository.
 
@@ -127,16 +129,16 @@ Përdoret **ASP.NET Core Identity me cookie sesioni**, jo Bearer JWT. Cookie-t j
 
 Swagger ofrohet vetëm në Development dhe përfshin konfigurimin lokal për cookie/CSRF. Përgjigjet private të API-së nuk ruhen në cache.
 
-| Rrugët kryesore | Përdorimi |
-| --- | --- |
-| `/api/catalog/*` | Produkte, oferta, banera dhe të dhënat e biznesit |
-| `/api/account/*` | Sesioni dhe llogaria |
-| `/api/orders` dhe `/api/orders/mine` | Porosia dhe historiku personal |
-| `/api/admin/products`, `/api/admin/orders`, `/api/admin/customers` | Menaxhimi i shitjeve dhe katalogut |
-| `/api/admin/dashboard` dhe `/api/admin/reports/customers` | Pasqyra dhe raportet financiare |
-| `/api/admin/administrators` | Menaxhimi i administratorëve |
-| `/api/notifications` | Njoftimet e dukshme për përdoruesin e hyrë |
-| `/api/admin/images` dhe `/media/{fileName}` | Ngarkimi dhe shfaqja e fotografive |
+| Rrugët kryesore                                                    | Përdorimi                                         |
+| ------------------------------------------------------------------ | ------------------------------------------------- |
+| `/api/catalog/*`                                                   | Produkte, oferta, banera dhe të dhënat e biznesit |
+| `/api/account/*`                                                   | Sesioni dhe llogaria                              |
+| `/api/orders` dhe `/api/orders/mine`                               | Porosia dhe historiku personal                    |
+| `/api/admin/products`, `/api/admin/orders`, `/api/admin/customers` | Menaxhimi i shitjeve dhe katalogut                |
+| `/api/admin/dashboard` dhe `/api/admin/reports/customers`          | Pasqyra dhe raportet financiare                   |
+| `/api/admin/administrators`                                        | Menaxhimi i administratorëve                      |
+| `/api/notifications`                                               | Njoftimet e dukshme për përdoruesin e hyrë        |
+| `/api/admin/images` dhe `/media/{fileName}`                        | Ngarkimi dhe shfaqja e fotografive                |
 
 Për kontratat, parametrat dhe metodat HTTP shihni Swagger-in lokal.
 
@@ -157,13 +159,13 @@ Shembull: shitje **20 €**, pagesë fillestare **12 €**, borxh **8 €**. Pag
 
 Fotografitë pranojnë JPG/JPEG/JFIF, PNG dhe WebP deri në 5 MB sipas konfigurimit. Backend-i kontrollon madhësinë, prapashtesën, MIME-in dhe nënshkrimin e përmbajtjes; emrin dhe prapashtesën e ruajtur i gjeneron vetë sipas formatit të njohur.
 
-| Konfigurimi | Qëllimi |
-| --- | --- |
-| `ConnectionStrings:Shop` | Lidhja me SQL Server |
-| `Business` | Emri, qyteti, telefoni dhe të dhënat e marrjes |
-| `ImageUploads:RootPath` | Dosja e fotografive; parazgjedhje `App_Data/uploads` |
-| `ImageUploads:MaxBytes` | Madhësia maksimale e fotografisë |
-| `Pagination` | Madhësia e parazgjedhur dhe kufiri i faqeve |
+| Konfigurimi              | Qëllimi                                              |
+| ------------------------ | ---------------------------------------------------- |
+| `ConnectionStrings:Shop` | Lidhja me SQL Server                                 |
+| `Business`               | Emri, qyteti, telefoni dhe të dhënat e marrjes       |
+| `ImageUploads:RootPath`  | Dosja e fotografive; parazgjedhje `App_Data/uploads` |
+| `ImageUploads:MaxBytes`  | Madhësia maksimale e fotografisë                     |
+| `Pagination`             | Madhësia e parazgjedhur dhe kufiri i faqeve          |
 
 Skedarët ruhen jashtë `wwwroot`; SQL ruan rrugën `/media/...`. Dosja e fotografive duhet të jetë e qëndrueshme në hostim dhe pjesë e kopjes rezervë. Heqja e fotografisë nga formulari heq lidhjen, jo skedarin fizik.
 
@@ -192,6 +194,8 @@ LocalDB dhe Vite development server nuk janë konfigurim prodhimi. Ngrok shërbe
 dotnet build FoodSales.sln
 dotnet ef migrations list --project src/FoodSales.Infrastructure --startup-project src/FoodSales.Api
 ```
+
+Workflow-i [Backend CI](.github/workflows/ci.yml) bën restore, kontroll të formatimit dhe build Release për push në `main` dhe pull request. Ai nuk lidh SQL Server dhe nuk zbaton migrime. `.editorconfig` përcakton formatimin C#.
 
 [VERIFICATION.sq.md](docs/VERIFICATION.sq.md) përmbledh kontrollet e kryera për porositë, pagesat, stokun, izolimin e llogarive, fotografitë dhe raportimin. Databazat e përkohshme të atyre kontrolleve nuk përfshihen në repository. Projekti nuk përmban ende një suitë të automatizuar testimi regresiv; build-i nuk provon vetë çdo rrjedhë biznesi ose instalimin në pajisje reale.
 
