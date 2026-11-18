@@ -33,6 +33,7 @@ public static class ApiExtensions
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = 429;
+            AddLimit("password-recovery", 3, TimeSpan.FromMinutes(15));
             AddLimit("auth", 10, TimeSpan.FromMinutes(5));
             AddLimit("checkout", 20, TimeSpan.FromMinutes(5));
             AddLimit("uploads", 30, TimeSpan.FromMinutes(5));

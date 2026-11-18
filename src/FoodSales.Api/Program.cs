@@ -10,6 +10,14 @@ builder.Services.AddFoodSales(builder.Configuration, builder.Environment.IsDevel
     .AddApiServices(builder.Environment.IsDevelopment());
 var app = builder.Build();
 
+if (args.Contains("--reset-admin-password"))
+{
+    if (!app.Environment.IsDevelopment())
+        throw new InvalidOperationException("Local administrator recovery is development-only.");
+    await DatabaseSetup.ResetAdministratorPasswordAsync(app.Services, CancellationToken.None);
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
     // Vite/ngrok terminates HTTPS before forwarding to this loopback-only API.

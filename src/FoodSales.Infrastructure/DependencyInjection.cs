@@ -2,6 +2,7 @@ using FoodSales.Application.Common;
 using FoodSales.Application.Interfaces;
 using FoodSales.Application.Services;
 using FoodSales.Infrastructure.Persistence;
+using FoodSales.Infrastructure.Configuration;
 using FoodSales.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -24,6 +25,22 @@ public static class DependencyInjection
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         }).AddEntityFrameworkStores<ShopDbContext>().AddDefaultTokenProviders();
+        var recovery = configuration.GetSection("PasswordRecovery").Get<PasswordRecoveryOptions>() ?? new PasswordRecoveryOptions();
+        var email = configuration.GetSection("Email").Get<EmailOptions>() ?? new EmailOptions();
+        if (!email.IsValid(development))
+            throw new InvalidOperationException("Invalid Email configuration. DevelopmentFile is permitted only in Development; SMTP requires a sender and credentials.");
+        if (recovery.TokenLifetimeMinutes is < 5 or > 120)
+            throw new InvalidOperationException("PasswordRecovery:TokenLifetimeMinutes must be between 5 and 120.");
+        if (email.DeliveryMethod != "Disabled" && (!Uri.TryCreate(recovery.PublicAppUrl, UriKind.Absolute, out var appUrl)
+            || !string.IsNullOrEmpty(appUrl.UserInfo) || appUrl.AbsolutePath != "/" || !string.IsNullOrEmpty(appUrl.Query)
+            || !string.IsNullOrEmpty(appUrl.Fragment) || !(appUrl.Scheme == "https" || development && appUrl.Scheme == "http" && appUrl.IsLoopback)))
+            throw new InvalidOperationException("PasswordRecovery:PublicAppUrl must be the trusted HTTPS application origin (HTTP loopback is allowed in Development).");
+        services.AddSingleton(recovery);
+        services.AddSingleton(email);
+        services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(recovery.TokenLifetimeMinutes));
+        services.AddScoped<IEmailSender, EmailSender>();
+        services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+        services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
         services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.Name = "FoodSales.Session";

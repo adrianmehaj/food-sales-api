@@ -57,6 +57,30 @@ public static class DatabaseSetup
             await db.SaveChangesAsync(ct);
         }
     }
+    public static async Task ResetAdministratorPasswordAsync(IServiceProvider provider, CancellationToken ct)
+    {
+        // This host-operator command is never exposed as an HTTP endpoint.
+        var input = System.Text.Json.JsonSerializer.Deserialize<AdministratorRecoveryInput>(await Console.In.ReadToEndAsync(ct))
+            ?? throw new InvalidOperationException("Recovery input is required through stdin.");
+        if (string.IsNullOrWhiteSpace(input.Email) || input.Email.Length > 254 || input.Password == null || input.Password.Length is < 12 or > 128)
+            throw new InvalidOperationException("Provide a valid email and a password between 12 and 128 characters.");
+        using var scope = provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var user = await users.FindByEmailAsync(input.Email.Trim()) ?? throw new InvalidOperationException("Account not found.");
+        if (!await users.IsInRoleAsync(user, "Admin"))
+            throw new InvalidOperationException("This account is not an administrator. Its role was not changed.");
+        var token = await users.GeneratePasswordResetTokenAsync(user);
+        Require(await users.ResetPasswordAsync(user, token, input.Password));
+        Require(await users.ResetAccessFailedCountAsync(user));
+        Require(await users.SetLockoutEndDateAsync(user, null));
+        await transaction.CommitAsync(ct);
+        Console.WriteLine("Administrator password reset successfully. Orders, payments and roles were not changed.");
+    }
+
+    private sealed record AdministratorRecoveryInput(string Email, string Password);
+
     private static void AddProduct(ShopDbContext db, string name, string description, string category, decimal price, decimal stock, Unit unit, string image)
     {
         var p = new Product();

@@ -59,9 +59,29 @@ Update-Database
 
 Fjalëkalimi kërkohet privatisht. Nuk ka kredenciale të paracaktuara. Pas krijimit të administratorit të parë, administratorët e tjerë shtohen nga paneli. Regjistrimi publik krijon llogari klienti.
 
+Për rikuperimin e një administratori ekzistues në mjedisin lokal, pa SMTP:
+
+```powershell
+.\scripts\Reset-AdminPassword.ps1 -Email 'admin@example.com'
+```
+
+Komanda lejohet vetëm në Development, kërkon fjalëkalimin privatisht dhe nuk ndryshon rolet ose të dhënat e biznesit. Nuk ekspozohet si endpoint HTTP.
+
 ## Autentikimi
 
 Përdoret ASP.NET Core Identity me cookie HttpOnly dhe kontroll qasjeje sipas rolit dhe pronësisë së të dhënave. Kërkesat që ndryshojnë të dhëna kërkojnë token nga `GET /api/account/csrf`, të dërguar në header-in `X-CSRF-TOKEN`. Dokumentimi i endpoint-eve dhe kontratave gjendet në Swagger-in lokal.
+
+## Rivendosja e fjalëkalimit
+
+Opsioni **Harrova fjalëkalimin** kërkon emailin e llogarisë dhe dërgon lidhje me vlefshmëri 30 minuta. Token-i bëhet i pavlefshëm pas përdorimit; sesionet e mëparshme kontrollohen brenda një minute. Përgjigjja publike nuk tregon nëse adresa është e regjistruar.
+
+Në Development, mesazhet ruhen lokalisht në `src/FoodSales.Api/App_Data/mail`, jashtë përmbajtjes publike dhe Git. Kjo mënyrë nuk dërgon email real dhe refuzohet në prodhim. Dërgimi SMTP aktivizohet me konfigurim privat:
+
+```powershell
+.\scripts\Configure-RecoveryEmail.ps1 -SenderEmail 'admin@example.com' -PublicAppUrl 'https://app.example.com'
+```
+
+Skripti kërkon kredencialin SMTP privatisht dhe e ruan në user secrets për Development. Për Gmail përdorni App Password, jo fjalëkalimin e llogarisë. Në prodhim vendosni konfigurimin `Email` dhe `PasswordRecovery:PublicAppUrl` në secret store të hostit. SMTP përdor STARTTLS (parazgjedhje porta 587). URL-ja e aplikacionit duhet të jetë origjinë HTTPS e besuar; HTTP lejohet vetëm për loopback në Development.
 
 ## Rregullat financiare
 
